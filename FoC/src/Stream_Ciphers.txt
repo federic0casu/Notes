@@ -1,0 +1,263 @@
+==================================
+          Stream Ciphers          
+==================================
+
+What is a stream cipher? Simply, it's an encryption scheme that uses a symmetric key, 
+i.e., the legitimate communicating parties share the same key. The encryption is performed 
+bit-wise: each plaintext's bit is encrypted using a bit of the keystream.
+
+
+==================================
+        OTP: One-Time-Pad      
+==================================
+
+One-Time-Pad is a stream cipher that, under some well-defined circumstances, is said to
+be perfect. The encryption and decryption algorithm are the following:
+
+ENCRYPTION: y[i] = x[i] xor k[i] = x[i] + k[i] mod 2
+DECRYPTION: x[i] = y[i] xor k[i] = y[i] + k[i] mod 2
+
+where x[i] is the i-th bit of a plaintext x, k[i] is the i-th bit of the keystream. 
+
+We studied that an encryption scheme can ben "perfect"? What does it mean? First thing 
+first, we should define a threat model, i.e., a set of hypothesis that must bet met in 
+order to state that a given cipher is perfect. The scenario is the following: an attacker 
+has ciphertext-only capability, i.e., an attacker can eavesdrop on the ciphertext, but 
+even with infinite resources, he/she cannot obtain any plaintext.
+
+In such circumstances, a cipher is said to be perfect if (and only if) for any plaintext p,
+for any ciphertext c, for any distribution defined over the plaintext space and for any
+distribution defined over the ciphertext space, it holds the following: 
+
+                            Pr(P = p | C = c) = Pr(P = p)
+
+The intuition behind the concept of perfect secrecy is simple:
+    1. Consider an attacker who knows everything about the encryption scheme except for
+       the encryption key. Notice that the latter is not a wild assumption: Shannon said
+       that we should not rely on cryptosystems designed following the principle of 
+       security through obscurity.
+    2. If an attacker knows everything about the encryption scheme, he/she also knows the 
+       distribution defined over the plaintext space as well as the distribution defined 
+       over the ciphertext space. Knowing how the plaintexts/ciphertexts are distributed
+       before the attacker eavesdrops on a ciphertext represents an information that can 
+       be used to break the cipher.
+    3. If the encryption scheme is perfect, then it should not reveal any additional 
+       info about the plaintext by looking at the ciphertext. Speaking in terms of probability,
+       the a-priori probability, Pr(P = p), should be equal to the a posteriori probability, 
+       Pr(P = p | C = c). 
+
+When OTP is said to be perfect? 
+    1. sizeof(key) = sizeof(plaintext) ==> Shannon's theorem
+    2. Each bit of the keystream should be truly random generated.
+    3. A keystream should be used just once (2-Time Pad is not a perfect cipher).
+    4. The keystream should be known only by the legitimate communicating parties (I think
+       that it's obvious, but we should recall always the secrecy of the key).
+
+Let's see what happens if the keystream is not truly random generated. Consider an attacker
+with ciphertext-only capability. The attacker can eavesdrop on the (insecure) communication
+channel and he can easily obtain some ciphertexts. Than, since we assumed that the attacker
+knows everything about the encryption scheme, he can obtain the following system of equations:
+
+                                    Y1 = X1 + K1 mod 2
+                                    Y2 = X2 + K2 mod 2
+                                    ...
+                                    Yn = Xn + Kn mod 2
+
+If the keystream is truly random generated, the attacker has no clue about the keystreams and 
+he ends up obtaining a system of n equations and 2n unknowns (both Xi and Ki are unknowns from 
+the attacker's perspective). However, the keystreams were somehow correlated, meaning that the 
+key generator is not a truly random one, since the only assumption about the attacker is that 
+he can only eavesdrops ciphertexts, the attacker might be able to identify a way to write the 
+keys as a function of the previous ones. Now, the attacker has to solve n equations but the 
+unknowns are no more 2n.
+
+Let's talk about why should use a keystream only once. Consider the Microsoft PPTP (Point-to-Point 
+Tunneling Protocol) and how it handles message encryption:
+    1. Each message sent by client to the server is considered as one stream. The encryption 
+       is performed on the entire communication session: 
+                                    K xor (M1 || M2 || ...)
+    2. Also, each message sent by the server to the client is considered as one stream. As we
+       have already seen, the entire communication sessions is encrypted as a whole: 
+                                    K xor (S1 || S2 || ...)
+    3. An attacker can gain knowledge just xoring together the two streams:
+       [K xor (M1 || M2 || ...)] xor [K xor (S1 || S2 || ...)] = (M1 xor S1 || M2 xor S2 || ...)
+At first glance M1 xor S1 might not seem revealing, but by exploiting the ASCII structure, 
+additional meaningful information can be obtained that wasn't apparent before.
+
+In essence, the concern here is that if the same keystream is used for multiple messages, an 
+attacker could XOR the ciphertexts of those messages and potentially gain insights into the 
+underlying plaintext due to patterns in the XORed result. This underscores the importance of 
+using a keystream only once to enhance security.
+
+Now let's talk about PROS and CONS of OTP.
+
+PROS:
+    1. Under some circumstances, OTP is a perfect cipher. Being perfect means also being 
+       unconditionally secure: with respect to a ciphertext-only attack the cipher cannot 
+       be broken even if with infinite resources.
+    2. OTP is very efficient. 
+    3. The encryption function is bijective, i.e., the encryption function is one-to-one.
+CONS:
+    1. Since we need keystreams that are as long as the plaintexts, OTP is unpractical for
+       most of cases because it needs very long keystreams (recall that the keystream needs
+       to be exchanged securely between the communicating parties).
+    2. OTP can be "defeated" by a known-plaintext attack: if the attacker knows a pair of
+       (pt, ct), he can compute the keystream as k = pt xor ct.
+    3. OTP is malleable. A cipher is said to be malleable if an attacker can apply a perturbation
+       to the ciphertext, resulting in a predictable transformation of the plaintext. 
+
+The malleability property can be quite dangerous, as illustrated in the following example:
+    a. Alice wants to send a payment to Bob, and she encrypts the message using a truly 
+        randomly generated key shared with Bob. For simplicity, they use arithmetic modulo 
+        26, treating the key as a stream of alphabetical letters. The message structure is 
+        as follows:
+                    +-----------------------------------------+
+                    |S|:|A|l|i|c|e|-|D|:| |B|o|b| |-|$|:|1|0|0|
+                    +-----------------------------------------+
+
+    b. Oscar, Alice's ex-boyfriend, discovers the encrypted message. Although he is unaware of 
+       the amount of money Alice is sending, he knows the structure of the original message. 
+       Oscar applies the following perturbation:
+
+                    +-----------------------------------------+
+                    |X|g|2|v|5|1|h|l|a|o|x|p|b|ì|+|z|q|ù|Q|s|T|
+                    +-----------------------------------------+
+                                        XOR
+                    +-----------------------------------------+
+                    |0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|2|0|0|
+                    +-----------------------------------------+
+                                        ||
+                    +-----------------------------------------+
+                    |X|g|2|v|5|1|H|l|a|o|x|p|b|i|f|z|q|u|a|s|T|
+                    +-----------------------------------------+
+                                                         ^----------- It changed 
+
+    c. Bob decrypts the tampered message without detecting the perturbation applied by Oscar. 
+       He obtains the exact original message except for one character:
+
+                    +-----------------------------------------+
+                    |S|:|A|l|i|c|e|-|D|:| |B|o|b| |-|$|:|3|0|0|
+                    +-----------------------------------------+
+       
+        because 1 + 2 = 3 mod 26.
+
+Now, we would like to analyze the encryption (and decryption) algorithm. As we already seen, the
+OTP encryption algorithm is as simple as elegant:
+
+ENCRYPTION: y[i] = x[i] xor k[i] = x[i] + k[i] mod 2
+
+Why do we choose to use the XOR function? It's just a simple modulo addition, isn't it? Yes, 
+it's just modulo addition, but it is good because it defines a uniform distribution over the 
+ciphertext space.
+
+Theorem [1]. Let K be a uniform random variable defined over the key space. Let X be a random 
+variable. There are no hypotheses that the distribution of X should meet. Thesis: Y = X xor K 
+is a uniform random variable.
+
+Proof. To establish that Y is a uniformly random variable, we need to show that:
+
+                                    Pr(Y = y) = (1/2)^n 
+
+for any ciphertext y. For the sake of simplicity, we will prove the theorem for n = 1.
+
+    1. The only possible values that y assumes are y = 0 and y = 1. Therefore, we have to 
+       prove that Pr(Y = 0) = Pr(Y = 1) = 1/2.
+    2. Pr(Y = 0) = Pr(X xor K = 0) = Pr(X = 0 AND K = 0) UNION Pr(X = 1 AND K = 1)
+       Since the plaintext and the key are independent (or at least should be independent from 
+       each other in order to be a good encryption scheme), we can rewrite Pr(Y = 0) as:
+       Pr(Y = 0) = Pr(X = 0) Pr(K = 0) UNION Pr(X = 1) Pr(K = 1)
+       Also, since the events (X = 0 and K = 0) and (X = 1 and K = 1) are disjoint, we can 
+       further simplify:
+       Pr(Y = 0) = [Pr(X = 0) Pr(K = 0)] + [Pr(X = 1) Pr(K = 1)] = 0.5[Pr(X = 0) + Pr(X = 1)] =
+                 = 0.5
+
+Theorem [2]. OTP is perfect.
+
+Proof. To establish whether OTP is a perfect cipher or not, we should investigate if the 
+definition of perfect secrecy always holds. Formally, a cipher is said to be perfect if (and only if):
+    a. for any distribution defined over the plaintext space,
+    b. for any distribution defined over the ciphertext space,
+the condition:
+    for any p in P, for any c in C ==> Pr[P = p | C = c] = Pr[P = p]
+must be satisfied.
+
+Let's consider the probability Pr[P = p | C = c]: exploiting the Bayes' Theorem, we can rearrange
+the a posteriori probability as:
+
+    Pr[P = p | C = c] = (Pr[C = c | P = p] * Pr[P = p]) / Pr[C = c]    
+
+Let's focus on Pr[C = c]:
+    Pr[C = c] => Total probability law =>
+            = SUM_{i = 1}^{2^n} Pr[C = c | P = p_{i}] Pr[P = p_{i}] =  
+            => knowing that P = p_{i} means k = p_{i} xor c =>
+            = SUM_{i = 1}^{2^n} Pr[K = p_{i} xor c] Pr[P = p_{i}] = 
+            = K is a uniform random variable = 
+            = SUM_{i = 1}^{2^n} (1/2)^k Pr[P = p_{i}] = (1/2)^k
+
+    Pr[C = c | P = p] = Pr[K = p xor c] = (1/2)^k
+
+==> Pr[P = p | C = c] = [(1/2)^k * Pr[P = p]] / (1/2)^k = Pr[P = p]                Q.E.D.
+
+
+===================================
+ Towards a practical stream cipher      
+===================================
+
+In the previous section we saw that OTPs are unconditionally secure, but that they have drawbacks 
+which make them impractical. What we try to do with practical stream ciphers is to replace the truly 
+random key stream bits by a pseudorandom number generator where the key k serves as a seed. 
+The principle of practical stream ciphers is shown below:
+
+    1. Let Gen(k) be a deterministic efficient algorithm defined as Gen : {0,1}^k -> {0,1}^n, where 
+       k << n.
+    2. ENCRYPTION: y = x xor Gen(k) = x + Gen(k) mod 2
+    3. DECRYPTION: x = y xor Gen(k) = y + Gen(k) mod 2 
+
+Before we turn to stream ciphers used in the real world, it should be stressed that practical stream 
+ciphers are not unconditionally secure. In fact, all known practical crypto algorithms (stream ciphers, 
+block ciphers, public-key algorithms) are not unconditionally secure. The best we can hope for is 
+computational security, which we define as follows:
+
+Computational security: A cryptosystem is computationally secure if the best known algorithm for 
+breaking it requires at least t operations.
+
+
+==================================
+       Random Bit Generators      
+==================================
+
+The need for a deterministic algorithm to expand a small key (seed) into a larger one is a matter of 
+primary relevance. However, it is crucial to note that any deterministic algorithm cannot be used as 
+a key generation algorithm, as it may introduce a potential point of failure that could compromise 
+the security of the cipher.
+
+Let's make an example: consider a stream cipher that operates as follows:
+    => ENCRYPTION: y = x xor Gen(k) = x + Gen(k) mod 2
+    => DECRYPTION: x = y xor Gen(k) = y + Gen(k) mod 2 
+where Gen(k) is deterministic algorithm that expand a secret k into a bigger bit-stream, used as 
+encryption key. Oscar, the attacker, manages to eavesdrops a ciphertext. The content of the ciphertext
+is a pdf file. Oscar, who is a smart guy, knows that any pdf file has a well defined (and well known)
+header. Oscar can manage to mount the following attack:
+
+    k[0:n-1] = y[0:n-1] xor x[0:n-1]
+
+Knowing the pdf header, Oscar is able to break the cipher (at least he can compute the firsts n bits
+of the key stream). What would happen if the key generator algorithm were weak (producing correlated 
+bits)? Oscar would then be able to determine the next bits of the key stream starting k[0:n-1]: oh 
+fuck, Oscar wins!
+
+Definition [1]. A Random Bit Generator (RBG) is an algorithm that produces statistically independent 
+and unbiased bits.
+    => Statistically independent bits means that the probability of emitting a bit whose value is 
+       0 or 1 does not depend on the previous emitted bits.
+    => Unbiased bits means that both bit values 0 and 1 have the same probability of being emitted,
+       i.e. Pr(B = 0) = Pr(B = 1) = 0.5
+
+Classes of RBGs:
+    => True Random Bit Generators (TRBG)
+    => Pseudo-Random Bit Generators (PRBG)
+    => Cryptographically Secure Pseudo-Random Bit Generator (CSPRBG)
+
+True Random Bit Generators (TRBGs) represent the best type of random bit generator we can hope for. 
+A TRBG produces "non-reproducible outputs" by leveraging natural phenomena. Consequently, the 
+probability of repeating the exact bits previously emitted is very (very, very, ...) low.

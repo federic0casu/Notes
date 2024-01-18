@@ -1,0 +1,65 @@
+1. Teorema di shannon - Cifrario perfetto + dimostrazione
+2. Diffie-hellman + perchè si lavora in un sottogruppo di Zp*
+3. Perfect forward secrecy (Definizione + esempio di come si può ottenere)
+3. Sicurezza RSA + perchè l'algoritmo base non è sicuro
+4. Proprietà di una funzione Hash + attacchi + Merkle Damgard (Concetto generale + schema se si ricorda)
+5. ECB
+6. Quali sono le informazioni minime che ci aspettiamo di trovare dentro un certificato? Quali sono i controlli da fare prima di utilizzarlo? (Controllo sull'integrità poi check sullo stato revocato/valido)
+7. Scambio di messaggi CA-Utente che effettuano il controllo di validità.
+8. Protocollo Diffie-Hellman, come funziona? Si descriva il suo funzionamento e come stabilire i parametri necessari. (g deve essere una permutazione su Zp, deve generare tutti i valori, a e b invece devono essere grndi perchè devono permettere a g^a di superare p altrimenti sarebbe facilmente fattorizzabile tramite la bruteforce) Noi in realtà non si va mai ad usare DH in Zp* ma lo applichiamo in un suo sottoinsieme, come mai? Non dovrebbe diminuire la sicurezza? (Pohlig-Hellman, con complessità o(log|g|))
+9. Definizione di funzione Hash sicura, quali proprietà deve possedere? Imposta e calcola la probabilità di un Birthday attack, con la complessità. Schema Merkle-Daamgard.
+10. CBC
+11. RSA key generation
+12. Perfect cipher
+13. Shannon's theorem
+14. a^x mod n (fast exponentiation)
+15. Funzioni hash (3 proprietà, attacchi alle varie proprietà)
+16. Guessing attack
+17. Birthday attack (paradosso del compleanno)
+18. Black box
+19. Block cipher: building block per uno stream cipher modalità -> OFB, CFB, CTR;
+20. Block cipher: costruzione cifrario perfetto, mostrare che non è possibile in pratica (permutazioni...); che permutazione implementa un cifrario?
+21. Dictionary attack (è un kpa)
+22. Diffie-hellman (per scambio di chiavi)
+23. Perfect forward secrecy
+- Funzioni hash: schema di Merkle-Damgaard, funzioni di compressione
+- schema modalità CBC
+- differenze CBC/ECB
+- si può usare CBC con cifrari asimmetrici? (sì)	OK
+- cifrario perfetto
+- RSA scolastico (rsa plain): perché non si usa in pratica (malleabile->come viene sfruttata questa caratteristica, deterministico->pt sempre stesso ct e problemi se lo spazio dei messaggi è piccolo poiché si può fare un attacco a forza bruta sui messaggi invece che sulla chiave, problemi con i moduli se tanti utenti usano lo stesso modulo, se piccoli esponenti)
+- Da Block Cipher a stream cipher, Enryption modes
+- parametro "e" in RSA (?) come si determina, a^x, square&multiply (esponente deve contenere il minor numero di 1)
+- cifrari a caratteri: approssimazione block cipher, caratteristiche che deve avere un PRG per essere sicuro; LFSR: predicibile		OK
+- Proprietà funzioni Hash, guessing attack (funzionamento e complessità)	OK
+- protocollo Diffie-Hellman e perché ritenuto rivoluzionario->non prevedeva che A e B condividessero un segreto a priori, quindi no segreti a lungo termine  OK
+- Logaritmo discreto in campi finiti
+- Cifratura multipla (2E, 3DES): quanto conviene?	Ok
+- Man-in-the-middle Attack in Diffie-helman 	OK
+- Schema di Merkle-damgard (hash più grandi da hash piccoli(?)), Come si realizza la funzione h(piccolo)	OK
+- MAC: costruzione HMAC
+- DLP non generici, Zp*, vantaggio di passare alle curve ellittiche?
+- cifrario (a blocchi) perfetto, perché non realizzabile in pratica
+- Block cipher, perché dimensione blocco almeno (16*4?) bit?
+- Da cosa dipende la dimensione del dizionario nel dictionary attack (da 2^n)
+- Qual è il problema della PFS
+
+
+ARGOMENTI RGGRUPPATI:
+- Shannon. 	x5			FATTO
+- Diffie-Hellman, Operazioni su Z*p e Man in the middle problem.	 x4
+- Perfect Forward Secrecy, problemi e vantaggi.	 x3
+- RSA, key-generation, Problema RSA-Plain + soluzion, decryption e encryption.	x6
+- Hash functions: 3-proprietà, Merle-Damgaard scheme, funzioni di compressione, guessing attack, birthday attack.	x7
+- Certificati: Informazioni minime, operazioni di verifica 		
+- Cifrari a blocchi ed Encryption modes: CBC, ECB, OFB e CTR.	x10
+- DES, 2-DES e 3-DES
+- Square and multiply
+- MAC e HMAC
+- DLP sulle curve ellittiche
+- Dictionary Attack e Rainbow-Table Attack		
+- Elgamal Encryption scheme						FATTO
+- DH sulle curve ellittiche						FATTO
+- RNG: proprietà per la sicurezza
+
+1) cifrario DES quando si usa? per quale motivo il 3DES è sicuro e la 2DES no? Complessita di storage? Complessità sui dati? Se usassi 4DES? Cioè perchè non si va oltre a 3DES? 
