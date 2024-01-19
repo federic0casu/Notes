@@ -2,3 +2,51 @@
           Block Ciphers          
 ==================================
 
+Block ciphers, as the name suggests, encrypt block of bits (while stream ciphers encrypt one bit at 
+time). What is the mathematical (rigorous) definition of a block cipher? 
+
+Definition 1. [Block cipher] A  block cipher is a keyed permutation; in other words, the cipher itself
+defines a bijective permutation that maps each element of the plaintext space to exactly one element of
+the ciphertext space, as a function of the key.
+
+The algorithm implemented by a block cipher is nothing more than a deterministic algorithm; it's the 
+key that introduces randomness into the encryption process. Let me explain better:
+
+    a. Consider the plaintext and ciphertext space; both are composed of integers belonging to 
+       [0, 2^n - 1].
+    b. A block cipher implements a one-to-one mapping between the plaintext space and the ciphertext 
+       space: each plaintext is linked exactly to an element of the ciphertext space. The mapping is
+       chosen by the key; each key defines one possible mapping.
+
+It can be proven that a block cipher can be a perfect cipher, but only under certain circumstances.
+
+
+==================================
+	True Random Ciphers          
+==================================
+
+Let Perm be the set whose elements are all the possible permutations of {0,1}^n -> {0,1}^n. Since 
+Card[{0,1}^n] = 2^n, Card[Perm] = (2^n)!
+
+A True Random Cipher is a block cipher with the following properties:
+
+	1. Implements all the possible permutations in Perm.
+	2. Randomly select a permutation as a function of the key.
+	
+Fact 1. A true random cipher is perfect for Shannon.
+
+Discussing stream ciphers, we've seen that it is possible, albeit impractical, to implement a perfect 
+cipher. Unfortunately, in practice, a perfect block cipher cannot be implemented. To implement all the 
+possible permutations in Perm, a block cipher should have keys whose size (in bits) is
+
+	sizeof(key) = log_{2}[(2^n)!] ~ (n - 1.44)(2^n)
+	
+The number of bits required to index all the possible permutations in Perm grows exponentially with 
+the block size. This means, in practice, a perfect block cipher cannot be implemented because:
+
+	1. If the block size is too small (with the goal of making practical keys), an attacker could 
+	   mount a brute-force attack by enumerating all the possible permutations.
+	2. To discourage a brute force attack, we should use block that at least are 64 bits long. With 
+	   those numbers, we have keys that are roughly 64(2^{64}) bits-long!
+	   
+What is the best we can hope for? 

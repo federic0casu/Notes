@@ -234,17 +234,17 @@ the security of the cipher.
 Let's make an example: consider a stream cipher that operates as follows:
     => ENCRYPTION: y = x xor Gen(k) = x + Gen(k) mod 2
     => DECRYPTION: x = y xor Gen(k) = y + Gen(k) mod 2 
-where Gen(k) is deterministic algorithm that expand a secret k into a bigger bit-stream, used as 
+where Gen(k) is a deterministic algorithm that expand a secret k into a bigger bit-stream, used as 
 encryption key. Oscar, the attacker, manages to eavesdrops a ciphertext. The content of the ciphertext
 is a pdf file. Oscar, who is a smart guy, knows that any pdf file has a well defined (and well known)
 header. Oscar can manage to mount the following attack:
 
     k[0:n-1] = y[0:n-1] xor x[0:n-1]
 
-Knowing the pdf header, Oscar is able to break the cipher (at least he can compute the firsts n bits
-of the key stream). What would happen if the key generator algorithm were weak (producing correlated 
-bits)? Oscar would then be able to determine the next bits of the key stream starting k[0:n-1]: oh 
-fuck, Oscar wins!
+Knowing the pdf header x[0:n-1], Oscar is able to break the cipher (at least he can compute the firsts 
+n bits of the key stream). What would happen if the key generator algorithm were weak (producing 
+correlated bits)? Oscar would then be able to determine the next bits of the key stream by exploiting
+some patterns in k[0:n-1]: oh fuck, Oscar wins!
 
 Definition [1]. A Random Bit Generator (RBG) is an algorithm that produces statistically independent 
 and unbiased bits.
@@ -261,3 +261,52 @@ Classes of RBGs:
 True Random Bit Generators (TRBGs) represent the best type of random bit generator we can hope for. 
 A TRBG produces "non-reproducible outputs" by leveraging natural phenomena. Consequently, the 
 probability of repeating the exact bits previously emitted is very (very, very, ...) low.
+
+Pseudo-Random Bit Generators are deterministic algorithms. They take a string of bits of length k and 
+expand the input string into a much longer bit stream (L >> k, where L is the final bit length). It 
+must be stressed that, without any further properties, a pseudo-random bit generator cannot be used in 
+a security scenario: they are predictable!
+
+Let's take an example: the Linear Congruential Generator (LCG). An LCG is a pseudo-random number 
+generator with a very simple definition:
+
+	s[i] = A*s[i-1] + B mod m, i = 1, 2, ...
+	
+It's important to note that an LCG is periodic, meaning that after a certain number of steps, it will 
+output a random number that was previously generated. This periodicity is a consequence of the modulo 
+reduction. The modulo operation defines a cyclic group over a finite set of integers, and after a 
+while, the elements of the set start repeating. The 'period' of an LCG depends on the modulus m: the larger the modulus, the longer the period.
+
+Unfortunately, the LCG is considered a poor random number generator because it can be completely 
+broken by solving the following system of congruences:
+
+	s[i] = A*s[i-1] + B mod m
+	s[i+1] = A*s[i] + B mod m
+
+If we were able to obtain any sequence s[i-1], s[i], s[i+1], then we could to solve the system in the
+unknowns A and B.
+
+So what makes a PRBG a secure random bit generator? Upredictability.
+
+A Cryptographically Secure PRBG (CSPRBG) is an unpredictable PRBG. But what does it mean unpredictability? 
+
+	=> Given any sequence s[i], s[i+1], ..., s[i+n-1], a PRBG is said to be unpredictable if
+	   there is no polynomial algorithm that is able to predict s[i+n] with a probability 
+	   marginally larger than 1/2.
+	   
+A PRBG is said to pass all **polynomial-time statistical** tests if no polynomial-time algorithm can 
+correctly distinguish between an output sequence of the generator and a truly random sequence of the 
+same length with probability significantly greater than 1/2. 
+
+A PRBG is said to pass the **next-bit test** if there is no polynomial-time algorithm which, on input 
+of the first t-bits of an output sequence s, can predict the (t + 1)-st bit of s with probability 
+significantly greater than 1/2.
+
+
+
+
+
+
+
+
+
