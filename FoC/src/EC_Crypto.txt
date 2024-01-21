@@ -1,0 +1,150 @@
+==================================
+  Elliptic Curves Cryptosystems              
+==================================
+
+Elliptic curve cryptosystems don't rely on modular arithmetic. They were invented in the mid-80s, and
+the strength of elliptic curves is that they provide a certain level of security, similar to other 
+public key cryptosystems, but with considerably shorter keys.
+
+So, what is the mathematical background of EC cryptosystems? They rely on the generalized discrete 
+logarithm problem. While discussing the Diffie-Hellman key exchange protocol, we introduced the 
+definition of the generalized DLP. Let's recall it for clarity.
+
+Generalized DLP ==> Given a finite cyclic group G with cardinality |G| = n, an operation 'o' defined
+over G, and a generator 'g' of G, the generalized discrete logarithm problem can be stated as follows:
+
+	Given y in G, find x such that y = (g) o (g) o ... o (g) 
+	                                  |                     |
+	                                  +---------------------+  
+	                                          x times
+	
+What we try to do ﬁrst is to ﬁnd a cyclic group on which we can build our cryptosystem. Of course, the
+mere existence of a cyclic group is not sufﬁcient. The DL problem in this group must also be computa-
+tionally hard, which means that it must have good one-way properties.
+
+We can form certain types of curves from polynomial equations. By "curves", we mean the set of points
+(x, y) which are solutions of the equations. For example, the point (x = r, y = 0) fulills the equation
+of a circle and is, thus, in the set. An elliptic curve is a special type of polynomial equation. For 
+cryptographic use, we need to consider the curve not over the real numbers but over a finite field. The
+most popular choice is prime fields GF(p), where all arithmetic is performed modulo a prime p.
+
+Elliptic Curve: we define an elliptic curve E for cryptographic uses as the set of integers belonging 
+to Zp^{*} (the set of integers [0, p-1] where p is prime). Each element of E must be a solution of:
+
+				y^2 = x^3 + a*x + b mod p
+
+where the condition 4*(a^3) + 27*(b^2) <> 0 mod p must be satisfied. Additionally, we include an 
+imaginary point O (immaginary point).
+
+The definition of elliptic curve requires that the curve is nonsingular. Geometrically speaking, this
+means that the plot has no self-intersections or vertices, which is achieved if the discriminant of the 
+curve −16[4*(a^3) + 27*(b^2)] is nonzero.
+
+Now we need a group operation defined over the elliptic curve group. We will call the operation as 
+"addition" (+):
+
+	a. For two distinct points P and Q on E, the point addition is defined as follows:
+	   	=> Take the line passing through points P and Q (cord). The line intersects another
+	   	   point belonging to the curve, R'. Take the symmetric point w.r.t. R', denoted as R.
+	   	   Point R is the result of the addition P + Q.
+	b. Point-doubling operation is defined for a point P on E as follows:
+	   	=> Take the tangent to the point P. The tangent intersscts the curve at another a
+	   	   point, denoted as P'. The symmetric point w.r.t. P' is the result of the point-
+	   	   doubling operation.
+	   	   
+What happens if we add to P its inverse point, i.e., -P? We obtain the immaginary point O.
+
+
+==================================
+    Generalized DLP over EC              
+==================================
+
+Theorem 1 [Existence of a finite cyclic sub-group of E]. The points on an elliptic curve together with 
+the immaginary point O have cyclic subgroups. Under certain conditions all points on an elliptic curve
+form a cyclic group.
+
+To set up DL cryptosystems it is important to know the order of the group. Even though knowing the
+exact number of points on a curve, |E|, is an elaborate task, we know the approximate number due to
+Hasse’s theorem.
+
+Theorem 2 [Hasse's Theorem]. The order of an elliptic curve define over Zp^{*} is bounded by
+			p + 1 - 2*sqrt{p} <= #E <= p + 1 + 2*sqrt{p}
+			
+Hasse’s theorem, which is also known as Hasse’s bound, states that the number of points is roughly in
+the range of the prime p.
+
+Now, we can define the discrete logarithm problem over a cryptographically secure elliptic curve E.
+
+Definition 1 [DLP over ECs]. Consider a cryptographically secure elliptic curve E, i.e., a curve with
+parameters chosen to ensure non-singularity and the formation of a cyclic group. Given generator G and
+a point P on the curve, the generalized DLP is described as follows:
+
+		Find the integer 1 <= x <= #E such that P = G + G + ... + G = xG
+		                                           |_______________|
+		                                                x times
+
+How is it possible to define the DLP over an elliptic curve? The first theorem assures us, under
+certain circumstances, that an elliptic curve can have subgroups that are finite cyclic groups.
+Additionally, thanks to Hasse's bound, we now have an idea of how many bits are needed to achieve a
+certain level of security:
+
+	=> We know that #E is in the order of p, i.e., O(#E) = p. That means, to discourage 
+	   brute force attacks (like enumerating all the possible elements in E with their respective
+	   private exponents x) p should be sufficiently large.
+	   
+Also, when we studied DHKE protocol we studied generic algorithms designed to solve any type of DLP:
+
+	=> Brute force attack. Complexity O(#E)
+	=> Shank's Baby-Step Giant-Step method. Complexity (sqrt{#E})
+
+Simply considering Shank's Baby-Step Giant-Step method, we can assert that any EC cryptosystem should
+have #E on the order of 2^{160} nowadays to achieve a security level of 80 bits.
+
+
+==================================
+     DH Key Exchange with ECs              
+==================================
+
+Now, we would like to implement the Diffie-Hellman Key Exchange protocol on the elliptic curves 
+domain. What should we have? What messages should we exchange during a run of the protocol?
+
+As we've seen in the original DHKE protocol (the one defined over Zp^{*}), before starting to exchange
+keys, the communicating parties should agree on a set of parameters:
+
+1st PHASE: Alice and Bob agree on a well-designed elliptic curve E together with a generator G of E.
+Both E and G are publicly known.
+
+Key Exchange Protocol:
+
+	Alice generates a randon integer a such that 1 < a < #E. She computes her public key,
+	A = G + G + ... + G = aG.
+	
+	[M1] Alice -> Bob: "Alice", A = aG
+	
+	Bob, upon receiving Alice's message, generates a random integer b such 1 < b < #E. He 
+	computes the secret key Kab = b * A = b(aG) = (ba)G = (ab)G. The, he computes his
+	public key, i.e., B = G + G + ... + G = bG.
+	
+	[M2] Bob -> Alice: "Bob", B = bG
+	
+	Alice, upon receiving Bob's message, computes the secret key Kab = a * B = a(bG) = (ab)G.
+	
+As can be seen in the protocol, Alice and Bob choose the private keys a and b, respectively, which are
+two large integers. With the private keys both generate their respective public keys A and B, which 
+are points on the curve. The public keys are computed by "point multiplication", that is performing 
+point addition n-times. The two parties exchange these public parameters with each other. The joint
+secret Kab is then computed by both Alice and Bob by performing a second point multiplication 
+involving the public key they received and their own secret parameter. The joint secret Kab can be
+used to derive a session key. Note that the two coordinates (xAB , yAB ) are not independent of each 
+other: Given xAB , the other coordinate can be computed by simply inserting the x value in the 
+elliptic curve equation. Thus, only one of the two coordinates should be used for the derivation of a 
+session key.
+
+
+
+
+
+
+
+
+
