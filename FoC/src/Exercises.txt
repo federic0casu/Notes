@@ -1,0 +1,300 @@
+=========================
+  Exercise 2 - 2nd 2022
+=========================
+
+Let h : {0,1}^{*} --> {0,1}^{n} be a hash function that is second pre-image and collision resistant.
+Let us now consider the hash function H : {0,1}^{*} --> {0,1}^{n}, built from h() as follows:
+
+	H(x) = 0 || h(x) if x in {0,1}^n
+	H(x) = 1 || h(x) if x not in {0,1}^n
+	
+Argue wheter H() is pre-image, second pre-image and collision resistant.
+
+Solution. Before addressing the exercise, let's recall the security properties of a hash function.
+
+[1st pre-image resistance] A hash function H() is considered 1st pre-image resistant if, for any hash y 
+it is computationally infeasible to find x such that y = H(x).
+
+[2nd pre-image resistance] A hash function H() is 2nd pre-image resistant if, given an input x', it is
+computationally infeasible to find x'' ( x' <> x'') such that H(x') = H(x'').
+
+[Collision resistance] Let H() be a hash function. H() is said to be collision resistant, or strong
+collision resistant, if it is computationally infeasible to find a pair <x', x''>, x' <> x'', such
+that H(x') = H(x'').
+
+[One-Way Hash Function (OWHF)] Let H() be a hash function. H() is said to be one-way if it is 1st
+pre-image resistant and 2nd pre-image resistant.
+
+[Cryptographically Secure Hash Function (CRSHF)] Let H() be a hash function. H() is said to be crypto-
+graphycally secure if it is 2nd pre-image and collision resistant.
+
+It's important to note that there is no theorem stating "Collision resistance implies 1st pre-image 
+resistance," and similarly, there is no theorem stating "2nd pre-image resistance implies 1st pre-image
+resistance."
+
+In this case, h() is not 1st pre-image resistant. By exploiting y = H(x) and removing the most significant bit, we obtain h(x), which is not 1st pre-image resistant.
+
+ 
+
+=========================
+  Exercise 1 - 3rd 2022
+=========================
+
+Alice and Bob have to choose an encryption mode between CTR and CBC (both modes require an IV that is
+transmitted in the clear). They know the adversary is able to intercept and change messages exchanged
+between them. They also know that for some messages the adversary knows the first plaintext block M1
+and wants to replace it with another block of his choice, namely A1.
+
+	1. Does CTR make it possible to perform such an attack?
+	2. Does CBC make it possible to perform such an attack?
+	
+Solution. Before addressing the exercise, let's recall how CTR encryption/decryption works.
+
+Encryption:
+
+	       +--------+--------+
+	       |   IV   | CTR[i] |               CTR[0] = 0
+	       +--------+--------+               CTR[i] = CTR[i-1] + 1
+			|
+			|
+			v
+		   +---------+
+		   |         |
+	   k ----->|    E    |
+		   |         |
+		   +---------+
+			|
+			|
+			v
+		     +-----+   	
+	    x[i] --->| xor |---> y[i]
+		     +-----+
+		     
+Decryption:
+
+	       +--------+--------+
+	       |   IV   | CTR[i] |
+	       +--------+--------+
+			|
+			|
+			v
+		   +---------+
+		   |         |
+	   k ----->|    E    |
+		   |         |
+		   +---------+
+			|
+			|
+			v
+		     +-----+   	
+	    y[i] --->| xor |---> x[i]
+		     +-----+
+
+Unfortunetaly, the CTR mode is malleable! Let's mount the attack:
+
+	1] The adversary intercepts the first message, i.e., {Y1, IV}.
+	2] The adversary knows that Y1 = M1 + E(k, IV || 0) mod 2. He does not need to know the key,
+	   because he knows M1!
+	3] The adversary applies a perturbation R = M1 + A1 mod 2 to Y1. He obtains:
+           Y1' = {M1 + E(k, IV || 0)} + R mod 2 = {M1 + E(k, IV || 0)} + M1 + A1 mod 2 =
+               = 2*M1 + E(k, IV || 0) + A1 mod 2 = A1 + E(k, IV || 0) mod 2
+        4] The adversary sends {Y1', IV}, succesfully impersonating the leggitimate sender.
+        
+        
+Maybe CBC is a better option. Let's find out:
+
+	1] The adversary can intercept the first message, i.e., {Y1, IV}.
+	2] The adversary knows that Y1 = E(k, M1 xor IV). He applies a perturbation to IV, i.e., 
+	   IV' = IV xor M1 xor A1. Then, the adversary sends {Y1, IV'}.
+	3] The leggitimate recevier decrypts Y1 using IV':
+	   D(k,Y1) xor IV' = (M1 xor IV) xor (IV xor M1 xor A1) = (M1 xor M1) xor (IV xor IV) xor A1 =
+	                   = A1
+	                  
+Nope, CBC isn't better than CTR. The problem is a matter of integrity: there is no such mechanism
+that protect message's integrity.           
+
+
+
+=========================
+  Exercise 2 - 3rd 2022
+=========================
+
+Given two protocols P1 and P2 with:
+	> P1: E(K1, x || H(K2, x)), where E() is a symmetric cipher.
+	> P2: x, E(pubK, H(x)), where E() is an asymmetric cipher.
+state wheter they, respectively, satisfy the following security services:
+	1. confidentiality,
+	2. integrity
+	3. non-repudation
+	
+Solution.
+Confidentiality:
+	P1 => Yes, x is encrypted by means of K1 with E().
+	P2 => Really? Do i need to answer it?
+Integrity:
+	P1 => Yes
+	P2 => The presented scheme does not provide integruty because, being pubk publicy known,
+	      anyone can produce x' <> x, H(x') and encrypt it with pubk. 
+Non-repudation:
+	P1 => Any symmetric cipher cannot be used for non-repudation purposes. The shared secret,
+	      being shared :), cannot be used by a trusted third-party to determine which one of 
+	      the leggimitate secret's holders produced the message.
+	P2 => The public key, being publicy known, cannot be used for non-repudation purposes.
+
+
+
+=========================
+  Exercise 1 - 4th 2022
+=========================
+
+In an electronic auction, bidder Bob casts his bid B encrypting it by means of auctioneer Alice's 
+public key, pubKA. Let us assume that a bid is 32 bit unsigned integer.
+
+	1. Argue wheter the following protocols 1-6 below are practical and secure w.r.t. a passive
+	   attacker who attempts to guess the bid B. A protocol is secure if the guessing attack
+	   requires at least 2^{80} steps.
+	   
+	   	1) B --> A: Bob, E(pubKA, Bob || B)
+	   	2) B --> A: Bob, E(pubKA, Bob || B || H(B))
+	   	3) B --> A: Bob, E(pubKA, Bob || H(B))
+	   	4) B --> A: Bob, R, E(pubKA, Bob || R || B)
+	   	5) B --> A: Bob, E(pubKA, Bob || R || B)
+	   	6) B --> A: Bob, E(pubKA, Bob || K), E(K, Bob || B)
+
+In the protocols:
+	a. E(K, x) represents the symmetric encryption of x by means of K.
+	b. H() is a secure hash function whose output size is h-bits.
+	c. R is an r-bit random number.
+	d. K is a k-bit symmetric random key.
+	e. Both R and K are dynamically generated at bidding time.
+	
+Solution.
+[Case 1] Since the attacker knows pubKA and Bob (the latter is sent without encrypting it), he can
+mount the following attack:
+
+	B <-- 0
+	y <-- E(pubKA, Bob || B) // The attacker can eavesdrops on the channel and intercepts it
+	do {
+		B' <-- random()
+		y' = E(pubKA, Bob || B')
+	} while (y != y');
+	
+Since B in [0, 2^{32}), the attack's complexity is O(2^{32}): the protocol is not secure.
+
+[Case 2] A possible attack:
+
+	B <-- 0
+	y <-- E(pubKA, Bob || B || H(B)) // Same reasoning as Case 1
+	do {
+		B' <-- random()
+		y' = E(pubKA, Bob || B' || H(B'))
+	} while (y != y');
+	
+Since B in [0, 2^{32}), the attack's complexity is O(2^{32}): the protocol is not secure.
+
+[Case 3] The attacker manages to obtain H(B):
+
+	B <-- 0
+	y <-- E(pubKA, Bob || H(B)) // Same reasoning as Case 1
+	do {
+		B' <-- random()
+		y' = E(pubKA, Bob || H(B'))
+	} while (y != y');
+
+Since H() is a secure hash function, the attacker is not able to obtain B from H(B). The attacker 
+can always mount a dictionary attack: time complexity = O(2^{32}). Does the protocol make any sense?
+No, also the auctioneer would need to attack the hash function to be able to read B!
+
+[Case 4] Since the attacker knows pubKA, Bob and R (the latter is sent without encrypting it), he can
+mount the following attack:
+
+	B <-- 0
+	y <-- E(pubKA, Bob || R || B) // The attacker can eavesdrops on the channel and intercepts it
+	do {
+		B' <-- random()
+		y' = E(pubKA, Bob || R || B')
+	} while (y != y');
+	
+Since B in [0, 2^{32}), the attack's complexity is O(2^{32}): the protocol is not secure.
+
+[Case 5] The attacker DOES NOT know R. He can mount the following attack:
+
+	B <-- 0
+	y <-- E(pubKA, Bob || R || B) // The attacker can eavesdrops on the channel and intercepts it
+	do {
+		B' <-- random()
+		R' <-- random()
+		y' = E(pubKA, Bob || R' || B')
+	} while (y != y');
+	
+Since R in [0, 2^r), the attack's complexity is O(2^{32} * 2^r): the protocol is secure IF AND ONLY IF
+r >= 48.
+
+[Case 6]
+
+	y <-- E(pubKA, Bob || K) // The attacker can eavesdrops on the channel and intercepts it
+	do {
+		K' <-- random()
+		y' = E(pubKA, Bob || K')
+	} while (y != y');
+	
+	B <-- D(K', E(K, Bob || B))
+	
+Since K in [0, 2^k), the attack's complexity is O(2^k): the protocol is secure IF AND ONLY IF
+k >= 80.
+
+
+
+=========================
+  Exercise 2 - 4th 2022
+=========================
+
+Using a stream cipher.
+	Method 1) Let the ciphertext c be computed as c = E(K, x || h(x)), where h() is a hash 
+	          function and || is the concatenation operator.
+Show that, if the attacker knows the whole plaintext x, (s)he can replace x by an arbitrary x' of his/
+her choice and compute c' such that the receiver will verify the message correctly. Assume that x and 
+x' are of equal lenght. Will this attack work too if the encryption is done with one-time-pad?
+	Method 2) Is the attack still applicabile if the checksum is computed using a MAC, i.e., 
+                  c = E(K1, x || MAC(K2, x))
+
+Solution. 
+
+Method 1:
+	a. The attacker obtains c = E(K, x || h(x)) = K xor {x || h(x)}. 
+	   Let's focus on {x || h(x)}:
+	   {x || h(x)} + {x || h(x)} + {x' || h(x')} mod 2 = 2{x || h(x)} + {x' || h(x')} mod 2 =
+	   = {x' || h(x')} mod 2
+	b. The attacker applies the perturbation r = {x || h(x)} + {x' || h(x')} mod 2 to ciphertext.
+	   Then (s)he sends c' = c + r mod 2
+	c. The leggitimate receiver, upon receiving the message, it decrypts c' as
+	   K + c' mod 2 = K + c + r mod 2 = K + (K + {x || h(x)}) + ({x || h(x)} + {x' || h(x')}) =
+	   = (K + K) + ({x || h(x)} + {x || h(x)}) + {x' || h(x')} mod 2 = 
+	   = 2K + 2{x || h(x)} + {x' || h(x')} mod 2 = {x' || h(x')} mod 2
+	   
+Method 2: even if the attacker knows x, the attacker does not K2. (S)He could try to guess it but, 
+if K2 in [0, 2^{80}], (s)he would waste time: too difficult!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
