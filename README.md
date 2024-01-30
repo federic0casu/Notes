@@ -23,17 +23,3 @@ The content hosted in this repository is a collection of personal notes and mate
 By accessing and using the content in this repository, users acknowledge and agree to the terms outlined in this disclaimer. The repository owner reserves the right to modify or update this disclaimer as needed.
 
 **Note:** This disclaimer is subject to change, and users are advised to review it periodically for any updates.
-
-
-## Content
-
-```
-Notes
-├── CA
-│   ├── Theory
-│   └── Quantum Computing
-├── ECS
-│   ├── Communication Systems
-│   └── Electronics
-└── LSMD
-```
