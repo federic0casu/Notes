@@ -29,7 +29,7 @@ So, it's time to talk about the mathematical foundations needed by the DHKE prot
 	   it has maximum order, i.e., card{g} = |Zp|. 
 	   
 	3) Let p be prime and g in Zp^{*} be a primitive element (or generator). DHKE protocol works
-	   with those two parameters: they are public and they could be agreeded a-priori.
+	   with those two parameters: they are public and they could be agreed a-priori.
 	   
 	4) DISCRETE LOGARITHM PROBLEM: given a multiplicative group Zp^{*}, where p is prime. Given 
 	   a generator of Zp^{p}, g. Given y in Zp^{*} find x such that y = g^x mod p, i.e., 
@@ -110,7 +110,8 @@ once again with the respective recipient's secret key.
 
 The Discrete Logarithm Problem can be defined over any finite cyclic group! What do we need?
 
-Definition 1 [Generalized DLP]. Given a finite cyclic group G, |G| = n, and a group operation, let's call it o, we can define the generalized DLP as:
+Definition 1 [Generalized DLP]. Given a finite cyclic group G, |G| = n, and a group operation, 
+let's call it o, we can define the generalized DLP as:
 
 	Given y in G, find 1 <= x <= n in G such y = (a) o (a) o ... o (a)
                                                     |                     |
@@ -123,7 +124,7 @@ Definition 1 [Generalized DLP]. Given a finite cyclic group G, |G| = n, and a gr
 ==================================
 
 There two classes of algorithm that can be used to solve the discrete logarithm problem: generic
-algorithms and nongeneric algorithms. The former class fo algorithms works in any finite cyclic group,
+algorithms and non-generic algorithms. The former class fo algorithms works in any finite cyclic group,
 regardless of the kind of operation or the type (should we say size?) of the generator.
 
 [1] Brute Force Attack ==> The running time is in the order of O(|G|). The bigger the set (in terms of
@@ -132,18 +133,20 @@ order to ensure a certain level of security, the DHKE protocol could not run ove
 should use large primes.
 
 [2] Shank's Baby-Step Giant-Step Method ==> The running time is in the order of O(sqrt{|G|}). Also, 
-the storage complexity is in the order of O(sqrt{|G|}).
+    the storage complexity is in the order of O(sqrt{|G|}).
 
 [3] Pollard's Rho Method ==> The running time is in the order of O(sqrt{|G|}).
 
 The most important generic algorithm we should focus on is the following.
 
-[4] Pohlig-Hellman Algorithm ==> It exploits the Chinese Remainder Theorem (CRT). The intuition behind is simple: the algorithm breaks down the DLP into "smaller" sub-groups of G. The running complexity is
+[4] Pohlig-Hellman Algorithm ==> It exploits the Chinese Remainder Theorem (CRT). The intuition behind 
+    is simple: the algorithm breaks down the DLP into "smaller" sub-groups of G. The running complexity is
 
 			O(sum_{i} e_{i} (log|G| + sqrt{p_i}))
 
 where p_{i} are the integer factors of |G| and e_{i} are the exponents related to p_{i}. The running
-complexity depends mostly on the order of the factors p_{i}: if each factor p_{i} is small than the algorithm is efficient! To ensure a security level of 80 bits, the smallest factor of |G| must be in
+complexity depends mostly on the order of the factors p_{i}: if each factor p_{i} is small than the 
+algorithm is efficient! To ensure a security level of 80 bits, the smallest factor of |G| must be in
 the order of 2^{160}.
 
 
