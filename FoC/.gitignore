@@ -1,2 +1,4 @@
 slides/*
 src/ElGamal_Crypto.txt
+.vscode
+.gitignore

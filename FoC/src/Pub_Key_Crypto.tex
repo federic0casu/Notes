@@ -255,7 +255,7 @@ As we are becoming familiar with it, let's delve into the application of $\maths
     \item Oscar manages to intercept Bob's public key. He's a smart guy and he thinks to impersonate Bob by sending to Alice a freshly generated public key $\mathsf{K_{pub}^{O}}$.
     \item Alice receives Oscar's public key but she thinks that it was Bob who sent the message. So she encrypts the confidential message with the received public key and sends it through the insecure channel.
     \item Oscar, once again, intercepts the encrypted message. Since the latter was encrypted using his public key, he is able to correctly decrypt Alice's message, read $\mathsf{x}$ and send $\mathsf{c' = E(K_{pub}^{B}, x)}$ to Bob.
-    \item Bob receives Oscar's messagge thinking that it was sent by Alice: both Alice and Bob are scammed by Oscar and no one knows it!
+    \item Bob receives Oscar's message thinking that it was sent by Alice: both Alice and Bob are scammed by Oscar and no one knows it!
 \end{enumerate}
 
 \begin{figure}

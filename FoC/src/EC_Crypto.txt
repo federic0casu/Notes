@@ -1,12 +1,12 @@
 ==================================
-  Elliptic Curves Cryptosystems              
+  Elliptic Curves Cryptosystem              
 ==================================
 
-Elliptic curve cryptosystems don't rely on modular arithmetic. They were invented in the mid-80s, and
+Elliptic curve cryptosystem doesn't rely on modular arithmetic. It was invented in the mid-80s, and
 the strength of elliptic curves is that they provide a certain level of security, similar to other 
 public key cryptosystems, but with considerably shorter keys.
 
-So, what is the mathematical background of EC cryptosystems? They rely on the generalized discrete 
+So, what is the mathematical background of EC cryptosystem? It relies on the generalized discrete 
 logarithm problem. While discussing the Diffie-Hellman key exchange protocol, we introduced the 
 definition of the generalized DLP. Let's recall it for clarity.
 
@@ -18,12 +18,12 @@ over G, and a generator 'g' of G, the generalized discrete logarithm problem can
 	                                  +---------------------+  
 	                                          x times
 	
-What we try to do ﬁrst is to ﬁnd a cyclic group on which we can build our cryptosystem. Of course, the
+What we try to do first is to ﬁnd a cyclic group on which we can build our cryptosystem. Of course, the
 mere existence of a cyclic group is not sufﬁcient. The DL problem in this group must also be computa-
 tionally hard, which means that it must have good one-way properties.
 
 We can form certain types of curves from polynomial equations. By "curves", we mean the set of points
-(x, y) which are solutions of the equations. For example, the point (x = r, y = 0) fulills the equation
+(x, y) which are solutions of the equations. For example, the point (x = r, y = 0) fulfills the equation
 of a circle and is, thus, in the set. An elliptic curve is a special type of polynomial equation. For 
 cryptographic use, we need to consider the curve not over the real numbers but over a finite field. The
 most popular choice is prime fields GF(p), where all arithmetic is performed modulo a prime p.
@@ -34,9 +34,9 @@ to Zp^{*} (the set of integers [0, p-1] where p is prime). Each element of E mus
 				y^2 = x^3 + a*x + b mod p
 
 where the condition 4*(a^3) + 27*(b^2) <> 0 mod p must be satisfied. Additionally, we include an 
-imaginary point O (immaginary point).
+imaginary point O (imaginary point).
 
-The definition of elliptic curve requires that the curve is nonsingular. Geometrically speaking, this
+The definition of elliptic curve requires that the curve is non-singular. Geometrically speaking, this
 means that the plot has no self-intersections or vertices, which is achieved if the discriminant of the 
 curve −16[4*(a^3) + 27*(b^2)] is nonzero.
 
@@ -48,11 +48,11 @@ Now we need a group operation defined over the elliptic curve group. We will cal
 	   	   point belonging to the curve, R'. Take the symmetric point w.r.t. R', denoted as R.
 	   	   Point R is the result of the addition P + Q.
 	b. Point-doubling operation is defined for a point P on E as follows:
-	   	=> Take the tangent to the point P. The tangent intersscts the curve at another a
+	   	=> Take the tangent to the point P. The tangent intersects the curve at another a
 	   	   point, denoted as P'. The symmetric point w.r.t. P' is the result of the point-
 	   	   doubling operation.
 	   	   
-What happens if we add to P its inverse point, i.e., -P? We obtain the immaginary point O.
+What happens if we add to P its inverse point, i.e., -P? We obtain the imaginary point O.
 
 
 ==================================
@@ -60,7 +60,7 @@ What happens if we add to P its inverse point, i.e., -P? We obtain the immaginar
 ==================================
 
 Theorem 1 [Existence of a finite cyclic sub-group of E]. The points on an elliptic curve together with 
-the immaginary point O have cyclic subgroups. Under certain conditions all points on an elliptic curve
+the imaginary point O have cyclic subgroups. Under certain conditions all points on an elliptic curve
 form a cyclic group.
 
 To set up DL cryptosystems it is important to know the order of the group. Even though knowing the
@@ -116,7 +116,7 @@ Both E and G are publicly known.
 
 Key Exchange Protocol:
 
-	Alice generates a randon integer a such that 1 < a < #E. She computes her public key,
+	Alice generates a random integer a such that 1 < a < #E. She computes her public key,
 	A = G + G + ... + G = aG.
 	
 	[M1] Alice -> Bob: "Alice", A = aG
