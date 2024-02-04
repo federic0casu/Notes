@@ -12,7 +12,7 @@ Beforehand, we should describe the threat model we are dealing with:
 
 So, a cipher is said to be "perfect" if has a well defined property called **perfect secrecy**.
 
-Definition 1 [**Perfect Secrecy**]. Consider an symmetric encryption scheme defined over a plaintext space $\mathcal{M}$ and a ciphertext space $\mathcal{C}$. Let $\mathsf{M}$ and $\mathsf{C}$ be random variables:
+Definition [1](#symmetric-cryptography).1 [**Perfect Secrecy**]. Consider an symmetric encryption scheme defined over a plaintext space $\mathcal{M}$ and a ciphertext space $\mathcal{C}$. Let $\mathsf{M}$ and $\mathsf{C}$ be random variables:
 
 - $\mathsf{M}$ is random variable defined over $\mathcal{M}$ with no hypothesis regarding the distribution.
 
@@ -111,7 +111,7 @@ Let's se what an attacker can do:
 
 If we would like to send an encrypted file using OTP, we would have to generate a truly random key-stream as long as the file: it would be very impractical. 
 
-A more efficient way to build stream ciphers is to make use of Pseudo Random Number Generators. Let's present the encryption scheme:
+A more efficient way to build stream ciphers is to make use of pseudo-random number generators. Let's present the encryption scheme:
 
 - Let $\mathsf{Gen(k)}$ be an efficient algorithm defined as $\mathsf{Gen : \{0,1\}^k \rightarrow \{0,1\}^n}$, $\mathsf{k < n}$.
 
@@ -123,9 +123,24 @@ We should stress that $\mathsf{Gen(k)}$ is a deterministic algorithm: the only s
 
 ---
 
+### Pseudo Random Generators
+
+Speaking about practical implementations of stream ciphers, we introduced a new concept: **pseudo-random number generators**. Let's start defining what is a pseudo-random bit generator.
+
+Definition [1](#symmetric-cryptography).2 [**Random Bit Generator**]. A random bit generator is an algorithm that outputs a sequence of bits which are *statistically independent* and *unbiased*.
+
+- Statistically independent means that the probability of emitting a bit value (either 1 or 0) does not depend on the previous bits.
+
+- Unbiased means that the probability of emitting a certain bit value is equal (or very very close to) $\mathsf{0.5}$
+
+Random Bit Generators (RBGs) can be used to generate uniformly distributed random numbers: a random number in the interval [0, n] can be obtained by 
+generating a bit sequence of length $\mathsf{log(n) + 1}$ and converting it to an integer.
+
+---
+
 ## Public Key Cryptography
 
-Definition 1 [**Public Key Encryption Scheme**]. Let $\mathsf{\langle Gen, E, D \rangle}$ be a triple of efficient algorithms, i.e., each one of them have a polynomial running time as well as the following properties:
+Definition [2](#public-key-cryptography).1 [**Public Key Encryption Scheme**]. Let $\mathsf{\langle Gen, E, D \rangle}$ be a triple of efficient algorithms, i.e., each one of them have a polynomial running time as well as the following properties:
 
 1. $\mathsf{Gen}$ is a randomized algorithm: $$\mathsf{Gen: \text{ } \{0,1\}^{k} \rightarrow \{0,1\}^{n} \times \{0,1\}^{n}}$$ $\mathsf{Gen}$ produces a pair of keys $\mathsf{\langle k_{priv}, k_{pub} \rangle}$, namely private and public key, as a function of truly random number. For the sake of brevity, we'll refer to the key space as $\mathsf{K_{priv} \times K_{pub} = \{0,1\}^{n} \times \{0,1\}^{n}}$.
 
@@ -152,7 +167,7 @@ Public key cryptography is based on the concept of *one-way function*:
 
 > A function f() is a **one-way function** if 1) $\mathsf{y = f(x)}$ is computationally easy, and 2) $\mathsf{x = f^{-1}(y)}$ is computationally infeasible.
 
-Definition 2 [**Digital Envelope**]. Public key cryptography is 2-3 orders of magnitude slower than symmetric key cryptography. The main application of public key cryptography is not doing bulk encryption/decryption but it is widely used to securely exchange session keys. A very simple implementation of a hybrid protocol which exploits both symmetric and public key cryptography could be described as follows:
+Definition [2](#public-key-cryptography).2 [**Digital Envelope**]. Public key cryptography is 2-3 orders of magnitude slower than symmetric key cryptography. The main application of public key cryptography is not doing bulk encryption/decryption but it is widely used to securely exchange session keys. A very simple implementation of a hybrid protocol which exploits both symmetric and public key cryptography could be described as follows:
 
 ```
               Alice                                       Bob
@@ -236,7 +251,7 @@ Is there a way to prevent the bidders from being scammed? Yes: **salting**.
 
 The RSA cryptosystem exploits the integer factorization as one-way function. Let's see how RSA primitives works.
 
-Definition 3 [**RSA Key Generation Algorithm**]
+Definition [3](#rsa-encryption-scheme).1 [**RSA Key Generation Algorithm**]
 
 1. Find $\mathsf{p}$ and $\mathsf{q}$ two large prime integers.
 2. Compute $\mathsf{n = p \cdot q}$.
@@ -268,10 +283,10 @@ First things first, we need to address the types of operations required during t
 
     2.b] The number of steps required to execute EEA is approximately equals to the number of digits of the input parameter, i.e., $\mathsf{O(log(\phi(n)))}$.
 
-Definition 4 [**RSA encryption**]. Let $\mathsf{x}$ be an integer such that $\mathsf{x \in [0,n-1]}$. The RSA encryption algorithm produces $\mathsf{y \in [1,n-1]}$ as follows: 
+Definition [3](#rsa-encryption-scheme).2 [**RSA encryption**]. Let $\mathsf{x}$ be an integer such that $\mathsf{x \in [0,n-1]}$. The RSA encryption algorithm produces $\mathsf{y \in [1,n-1]}$ as follows: 
 $$\mathsf{y = x^e \text{ } mod \text{ } n}$$
 
-Definition 5 [**RSA decryption**]. Let $\mathsf{y}$ be an integer such that $\mathsf{y \in [0,n-1]}$. The RSA decryption algorithm produces $\mathsf{x \in [1,n-1]}$ as follows: 
+Definition [3](#rsa-encryption-scheme).3 [**RSA decryption**]. Let $\mathsf{y}$ be an integer such that $\mathsf{y \in [0,n-1]}$. The RSA decryption algorithm produces $\mathsf{x \in [1,n-1]}$ as follows: 
 $$\mathsf{x = y^d \text{ } mod \text{ } n}$$
 
 How much is the cost of RSA encryption/decryption? Both algorithm work with modular exponentiation. Grade-school discrete exponentiation requires $\mathsf{n-1 = O(n)}$ multiplications with $\mathsf{log(n)}$-bit long operands. It's quite costly: if $\mathsf{n}$ were around $\mathsf{O(2^{1024})}$ then we would need to execute $\mathsf{1024}$-bit long multiplication. 
@@ -319,7 +334,7 @@ Let's examine the bit complexity of the decryption algorithm:
 
 The total cost for one run of the RSA decryption algorithm would be $\mathsf{3072 \cdot (32^2 + 32^2)}$ integer 64-bit operations.
 
-Fact 2 [**Schoolbook RSA is not secure**]. 
+Fact 2 [**Schoolbook RSA is malleable**]. 
 
 - Schoolbook RSA is malleable. An encryption scheme is said to be malleable if an attacker is able to apply a perturbation to a ciphertext which lead to a predictable transformation of the ciphertext. \
 Consider the following example:
@@ -328,6 +343,66 @@ Consider the following example:
     b. Oscar, a bad guy, knows both $\mathsf{e}$ and $\mathsf{n}$ (keep in mind that $\mathsf{\langle e, n \rangle}$ is the RSA public key). Oscar then choses $\mathsf{s}$ such that $\mathsf{gcd(s,n) = 1}$ and computes $\mathsf{y' = y \cdot s^e \text{ } mod \text{ } n}$. Oscar forwards $\mathsf{y'}$ to Bob. \
     c. Bob receives $\mathsf{y'}$ and decrypts it obtaining $\mathsf{(y')^d \text{ } mod \text{ } n = (x^e \cdot s^e)^d \text{ } mod \text{ } n = x \cdot s}$.
 
-- RSA is deterministic: a given plaintext is always mapped into a specific ciphertext.
+---
 
-- Small exponents and small plaintexts might be subjected to attacks.
+## Diffie-Hellman Key Exchange Protocol
+
+The Diffie-Hellman Key Exchange protocol (DHKE) is a key establishment protocol based on public key cryptography and, more specifically, exploits the discrete logarithm problem as a one-way function. Let's delve into the details of the protocol.
+
+**Setup phase** - Before the legitimate communicating parties (from now on Alice and Bob) can exchange some piece of information to build a shared secret session key, they need to agree on a set of parameters (called Diffie-Hellman public parameters):
+
+- Alice and Bob agree on a *large* prime $\mathsf{p}$.
+
+- Alice and Bob agree on a integer $\mathsf{1 < g < p}$ such that it is a generator for $\mathsf{Z^{\star}_{p}}$. What does it mean "generator"? An integer $\mathsf{\alpha \in \{2, ..., p-2\}}$ is said to be a generator of the group $\mathsf{Z^{\star}_{p}}$ if its order is *maximum*, i.e., $\mathsf{ord(\alpha) = |Z^{\star}_{p}| = p-1}$.
+
+**Key establishment phase** - The protocol runs with just two messages:
+
+- Alice --> Bob: "Alice", $\mathsf{Y_{A} = g^a \; mod \; p}$
+
+- Bob --> Alice: "Bob", $\mathsf{Y_{B} = g^b \; mod \; p}$
+
+Parameters $\mathsf{1 < a < p-1}$ and $\mathsf{1 < b < p-1}$ are two truly-random integers generated by Alice and Bob, respectively. 
+
+The shared session key is then computed as:
+
+- Alice computes $\mathsf{(g^b)^a \; mod \; p = g^{ba} \; mod \; p = g^{ab} \; mod \; p}$.
+
+- Bob computes $\mathsf{(g^a)^b \; mod \; p = g^{ab} \; mod \; p}$.
+
+Pay attention: $\mathsf{a}$ and $\mathsf{b}$ **must** be kept private. If either $\mathsf{a}$ or $\mathsf{b}$ were to be disclosed, an attacker could solve the discrete logarithm problem. Let's talk about what are the security aspects of the protocol.
+
+1. From a passive adversary perspective, the security of the DHKE protocol relies on the difficulty of the Discrete Logarithm Problem (DLP). The DLP involves finding the exponent in the modular exponentiation equation, such as $\mathsf{log_{g}(Y_A) \; mod \; p}$ or $\mathsf{ log_{g}(Y_B) \; mod \; p}$, where $\mathsf{Y_A}$ and $\mathsf{Y_B}$ are public keys. If $p$ is chosen to be large enough, solving the DLP becomes computationally infeasible, providing security against passive eavesdropping.
+
+2. From an active adversary perspective, the DHKE protocol is insecure due to its lack of authentication. An active adversary can mount a MITM attack, impersonating Bob w.r.t. Alice's perspective and vice versa. Let's study how the attack works:
+
+    2.1 Oscar, a malicious actor, intercepts Alice's message \{"Alice", $\mathsf{Y_{A} = g^a \; mod \; p}$\}. Then, he chooses $\mathsf{c \in \{2, ..., p-2\}}$ and substitutes $\mathsf{Y_{A}}$ with $\mathsf{Y_{A}' = g^c \; mod \; p}$. 
+
+    2.2 Once Bob receives \{"Alice", $\mathsf{Y_{A}' = g^c \; mod \; p}$\}, he believes that Alice is attempting to establish a shared secret key with him. Bob computes the shared secret key as $\mathsf{K_{AB}' = (g^c)^b \; mod \; p = g^{cb} \; mod \; p}$.
+
+    2.3 Upon Bob sends his public key, i.e., \{"Bob", $\mathsf{Y_{B} = g^b \; mod \; p}$\}, Oscar intercepts it and substitutes $\mathsf{Y_{B}}$ with $\mathsf{Y_{B}' = g^c \; mod \; p}$. 
+
+    2.4 Once Alice receives \{"Bob", $\mathsf{Y_{B}' = g^c \; mod \; p}$\}, she believes that Bob replies to her. Alice computes the shared secret key as $\mathsf{K_{AB}'' = (g^c)^a \; mod \; p = g^{ca} \; mod \; p}$.
+
+    2.5 As Oscar controls $\mathsf{c}$, he can compute both $\mathsf{K_{AB}'}$ and $\mathsf{K_{AB}''}$. For each message sent by Alice, Oscar decrypts   it with $\mathsf{K_{AB}''}$, reads the plaintext, and forwards the plaintext to Bob by encrypting it with $\mathsf{K_{AB}'}$.
+
+---
+
+**Why we should not work on $\mathsf{Z_{p}^{\star}}$?**
+
+DLP can be attacked from various angles, with both generic and non-generic algorithms having been studied to solve the problem as efficiently as possible. Now, let's delve into the details.
+
+**Generic Algorithms**:
+
+- **Brute Force** - As usual, one can solve DLP by just enumerating all the possible elements in the group $\mathsf{G}$. Complexity: $\mathsf{O(|G|)}$.
+
+- **Shank's Baby-Step Giant-Step Method** - More efficient than brute forcing, but not very efficient in terms of storage complexity. Running time: $\mathsf{O(\sqrt{|G|})}$. Storage complexity: $\mathsf{O(\sqrt{|G|})}$. 
+
+- **Pollard's Rho Method** - More efficient than *Shank's Baby-Step Giant-Step Method* in terms of storage complexity. Running time: $\mathsf{O(\sqrt{|G|})}$. Storage complexity: negligible.
+
+- **Pohlig-Hellman Method** - It exploits the CRT and the factorization of the group's cardinality. Complexity: $\mathsf{O[\sum_{i} e_i \cdot (log(|G|) + \sqrt{p_i})]}$, where $\mathsf{|G| = \prod_{i} p_i ^{e_i}}$.
+
+So, what is the problem with $\mathsf{Z_{p}^{\star}}$? Since $\mathsf{p}$ is prime, $\mathsf{p-1}$ is even. This property opens the possibility that the Pohlig-Hellman method could be efficient in $\mathsf{Z_{p}^{\star}}$ because the factors of $\mathsf{|G| = p-1}$ may not be large. We know that at least 2 is a factor of $\mathsf{|G|}$, and there is a good chance that there are many small factors in $\mathsf{|G|}$, potentially diminishing the complexity of solving the DLP. To prevent the attack the smallest factor of |G| must be in the range $\mathsf{2^{160}}$.
+
+**Small Subgroup Confinement Attack**
+
+A (small) subgroup confinement attack on a cryptographic method that operates in a large finite group is where an attacker attempts to compromise the method by forcing a key to be confined to an unexpectedly small subgroup of the desired group
