@@ -26,7 +26,7 @@ What does the perfect secrecy property aim to model? If a cipher is perfect, the
 
 There is a very famous theorem that allow us to check whether a cipher is perfect or not.
 
-Theorem 1 [**Shannon's Theorem**]. In a perfect cipher, $|\mathcal{K}| \geq |\mathcal{M}|$, i.e., the number of keys cannot be smaller than the 
+Theorem [1](#symmetric-cryptography).1 [**Shannon's Theorem**]. In a perfect cipher, $|\mathcal{K}| \geq |\mathcal{M}|$, i.e., the number of keys cannot be smaller than the 
 number of messages.
 
 *Proof*: We are going to prove Shannon's theorem by contradiction.
@@ -135,6 +135,10 @@ Definition [1](#symmetric-cryptography).2 [**Random Bit Generator**]. A random b
 
 Random Bit Generators (RBGs) can be used to generate uniformly distributed random numbers: a random number in the interval [0, n] can be obtained by 
 generating a bit sequence of length $\mathsf{log(n) + 1}$ and converting it to an integer.
+
+---
+
+## Block Ciphers
 
 ---
 
@@ -405,4 +409,73 @@ So, what is the problem with $\mathsf{Z_{p}^{\star}}$? Since $\mathsf{p}$ is pri
 
 **Small Subgroup Confinement Attack**
 
-A (small) subgroup confinement attack on a cryptographic method that operates in a large finite group is where an attacker attempts to compromise the method by forcing a key to be confined to an unexpectedly small subgroup of the desired group
+A (small) subgroup confinement attack on a cryptographic method that operates in a large finite group is where an attacker attempts to compromise the method by forcing a key to be confined to an unexpectedly small subgroup of the desired group.
+
+Theorem [4](#diffie-hellman-key-exchange-protocol).1 - Given a group $\mathsf{G}$ whose cardinality is $\mathsf{|G| = n}$, for each $\mathsf{k}$ that divides $\mathsf{n}$, we can define a subgroup $\mathsf{H}$ whose cardinality is $\mathsf{|H| = k}$. Therefore, for each subgroup $\mathsf{H}$ exists a generator $\mathsf{g_{h}}$ defined as $\mathsf{g_{h} = \alpha^{n/k}}$, where $\mathsf{\alpha}$ is a generator of $\mathsf{G}$.
+
+We have everything we need to mount a small confinement attack!
+
+1. A malicious actor, Oscar, intercepts Alice's message {"Alice", $\mathsf{Y_{A}' = g^a \; mod \; p}$}. Since $\mathsf{p}$ is publicly known, Oscar can compute $\mathsf{|G| = p-1}$. Once he determines $\mathsf{n = |G|}$, he can find a 'small' integer $\mathsf{k}$ that divides $\mathsf{n}$.
+
+2. Oscar finds $\mathsf{k}$ and substitutes $\mathsf{Y_{A}}$ with $\mathsf{Y_{A}' = (g^a)^{n/k} \; mod \; p}$. If Oscar has enough computational power, he could compute $\mathsf{(g^{n/k})^{a} \; mod \; p}$, which is less "difficult" than $\mathsf{(g^a) \; mod \; p}$.
+
+---
+
+## Perfect Forward Secrecy
+
+What is the problem of perfect forward secrecy? Consider the following key-establishment protocol:
+
+> [**M1**] Alice --> Bob: $\mathsf{E(K_{AB}, K_{s})}$
+>
+> [**M2**] Bob --> Alice: $\mathsf{E(K_{s}, session)}$
+
+What happens if the long-term shared secret $\mathsf{K_{AB}}$ were to be disclosed? Both previous and next runs of the protocol are not longer secure because an attacker can decrypt message M1 and (s)he can recover the session key $\mathsf{K_{s}}$ being used for the encryption.
+
+Definition [5](#perfect-forward-secrecy).1 [**Perfect Forward Secrecy**]. A protocol has the perfect forward secrecy property if, even in the scenario in which some long-term secret keying material has been disclosed, the security (i.e., the confidentiality) of previous runs of the protocol is not compromised.
+
+Let's explore examples of protocols that fulfill perfect forward secrecy.
+
+
+(**1**) Pre-Shared-Key Diffie-Hellman Key Exchange (**PSK-DHKE**):
+
+> [**M1**] Alice --> Bob: $\mathsf{E(K_{AB}, \; g^a \; mod \; p)}$
+>
+> [**M2**] Bob --> Alice: $\mathsf{E(K_{AB}, \; g^b \; mod \; p)}$
+>
+> Alice computes $\mathsf{K_{s} = (g^b)^a \; mod \; p = g^{ab} \; mod \; p}$, Bob computes $\mathsf{K_{s} = (g^a)^b \; mod \; p = g^{ab} \; mod \; p}$. Both $\mathsf{a}$ and $\mathsf{b}$ should be deleted after the session key has been computed.
+>
+> [**M3**] Alice --> Bob: $\mathsf{E(K_{s}, session)}$
+
+Please note that even if an attacker were able to obtain $\mathsf{K_{AB}}$, (s)he would need to solve the discrete logarithm problem because the decrypted messages do not carry $\mathsf{a}$ or $\mathsf{b}$.
+
+(**2**) Ephemeral RSA (**RSAE**)
+
+> Alice computes a pair of ephemeral RSA keys $\mathsf{\langle T_{pub}, T_{priv} \rangle}$ as well as Alice holds a pair of long-term $\mathsf{\langle K_{pub}, K_{priv} \rangle }$. 
+>
+> [**M1**] Bob --> Alice: Request
+>
+> [**M2**] Alice --> Bob: $\mathsf{T_{pub} \text{, } Sign(K_{priv}, \; T_{pub} \: || \: Request) \text{, } Cert_{A}}$.
+>
+> [**M3**] Bob --> Alice: $\mathsf{E(T_{pub}, K_{s})}$
+>
+> Alice computes $\mathsf{K_{s} = D(T_{priv}, M2)}$. Ephemeral RSA keys should be deleted after the session key has been computed.
+>
+> [**M4**] Alice --> Bob: $\mathsf{E(K_{s}, session)}$
+
+Defintion [5](#perfect-forward-secrecy).2 [**Direct Authentication**]. To prove the peer the knowledge of the session key $\mathsf{K_{s}}$.
+
+If a key exchange protocol does not fulfil direct authentication, this authentication is achieved at the first application message. PSK-DHKE and RSAE don’t fulfil direct authentication!
+
+(**3**) Station-to-Station protocol (**STS**)
+
+> **Setup phase**: Alice and Bob agreed on a set of public parameters $\mathsf{\langle g \text{, } p \rangle}$.
+>
+> [**M1**] Alice --> Bob: $\mathsf{"Alice" \text{, } g^a \; mod \; p}$
+>
+> [**M2**] Bob --> Alice: $\mathsf{"Bob" \text{, } g^b \; mod \; p \text{, } E(K_{s}, Sign\{K_{priv}^{B}, g^a \: || \: g^b \}) \text{, } Cert_{B}}$
+>
+> [**M3**] Alice --> Bob: $\mathsf{E(K_{s}, Sign\{K_{priv}^{A}, g^b \: || \: g^a \}) \text{, } Cert_{A}}$
+>
+> Alice checks that Bob holds the session key thanks to message **M2**. On the other hand, Bob checks that Alice holds the session key $\mathsf{K_{s}}$ thanks to message **M3**.
+>
+> [**M4**] Bob --> Alice: $\mathsf{E(K_{s}, session)}$
