@@ -479,3 +479,4 @@ If a key exchange protocol does not fulfil direct authentication, this authentic
 > Alice checks that Bob holds the session key thanks to message **M2**. On the other hand, Bob checks that Alice holds the session key $\mathsf{K_{s}}$ thanks to message **M3**.
 >
 > [**M4**] Bob --> Alice: $\mathsf{E(K_{s}, session)}$
+

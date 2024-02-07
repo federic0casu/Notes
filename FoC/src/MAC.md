@@ -129,3 +129,4 @@ What happens if we do not use the last encryption (raw CBC)? The MAC generation 
 Proof:
     1. The first iteration of raw-CBC will produce $\mathsf{t_{x} = E(K, x)}$ whatever the key will be.
     2. The second iteration will produce $\mathsf{t = E(K, (x \oplus t_{x}) \oplus t_{x}) = E(K, x \oplus (t_{x} \oplus t_{x})) = E(K, x) = t_{x}}$
+

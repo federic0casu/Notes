@@ -139,12 +139,3 @@ used to derive a session key. Note that the two coordinates (xAB , yAB ) are not
 other: Given xAB , the other coordinate can be computed by simply inserting the x value in the 
 elliptic curve equation. Thus, only one of the two coordinates should be used for the derivation of a 
 session key.
-
-
-
-
-
-
-
-
-

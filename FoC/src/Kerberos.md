@@ -102,7 +102,3 @@ Kerberos provides two mechanisms to implement delegation:
 1. Proxy tickets.
 
 2. Forwardable TGT.
-
-Let' analyze both.
-
-### Proxy Tickets
