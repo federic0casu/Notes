@@ -1,0 +1,502 @@
+                        ================================                        
+                                  Java Threads                                  
+                        ================================                        
+                                                                                
+We are used to the concept of thread. But what about threads in Java? To define 
+a thread, Java made available two different approaches:                         
+                                                                                
+    1. Extending Java.Thread class or                                           
+    2. Implementing Java.Runnable class.                                        
+                                                                                
+Let's see how to spawn a thread extending Java.Thread:                          
+                                                                                
++===================================java========================================+
+public class MyThread extends Thread {                                          |
+    public void run() {                                                         |
+        System.out.println("Hi, I'm a Java.Thread!");                           |
+    }                                                                           |
+}                                                                               |
+                                                                                |
+public class Main {                                                             |
+    public static void main(String[] args) {                                    |
+        MyThread thread = new MyThread();                                       |
+        thread.start();                                                         |
+    }                                                                           |
+}                                                                               |
++===============================================================================+
+A significant problem with extending Java Thread is that Java does not allow    
+extending more than one class: there is no multiple inheritance.                
+                                                                                
+For a very simple class, the aforementioned problem is not a big a deal. After  
+all, there will always be a problem that requires our thread class to extend at 
+least one more class. Java, thanks to interfaces, implements a mechanism that   
+resembles a form of multiple inheritance. Let's see how it works:               
+                                                                                
++===================================java========================================+
+public class MyTask implements Runnable {                                       |
+    public void run() {                                                         |
+        System.out.println("Hi, I'm a (sort of) Java.Thread!");                 |
+    }                                                                           |
+}                                                                               |
+                                                                                |
+public class Main {                                                             |
+    public static void main(String[] args) {                                    |
+        MyTask task = new MyTask();                                             |
+        Thread thread = new Thread(task);                                       |
+        thread.start();                                                         |
+    }                                                                           |
+}                                                                               |
++===============================================================================+
+Java.Runnable is an interface with just one abstract method. This method will be
+executed by the thread once it will started (calling Thread's method .start()). 
+                                                                                
+How is a Thread organized in Java? Let's start with the basics: memory.         
+A Java program is executed by a 'main' thread (the one in charge of executing    
+the main method). It is also possible to spawn a set of threads:                
+    1. By definition, a thread shares a part of memory with its parent process  
+       and with its "siblings". The only private memory that a thread owns is   
+       its stack.                                                               
+    2. As the JVM is a virtual machine, it behaves like a CPU with its own memory 
+       and address space. While running code, the JVM needs a space to memorize 
+       the code it is executing and a space to memorize data. For these reasons,
+       JVM's memory is divided into three different "areas".                    
+                                                                                
+METHOD AREA: Within the method area, the bytecode of each method of each class  
+of the program is stored, as well as any constant/static variable present in the
+code. Keep in mind that this area is shared among all the threads.              
+                                                                                
+HEAP: We are already familiar with the concept of the heap. In Java, the heap is
+in charge of storing any object being constructed by the program as well as     
+arrays. Like the method area, the heap is shared among all the threads. It re-  
+presents a common place for threads that want to share a variable. Also, it is  
+subject to garbage collection (we'll see later what this means).                
+                                                                                
+STACK AREA: the only memory that is private. Each thread owns a stack area; the 
+latter is used to implement the function-calling mechanism as well as to store  
+local variables. Also, to implement context-switching among threads, it holds the
+program counter of the thread.                                                  
+                                                                                
+How to stop a thread?                                                           
+Back in the days, there were two mechanism to stop a thread:                    
+    1. stop(): The stopped thread releases all its locks and then stops. Such a 
+       mechanism may lead to state inconsistencies.                             
+    2. suspend(): The thread is temporarily stopped. A thread can be "resumed"  
+       by invoking resume() on it. Such mechanism is deadlock-prone: if a thread
+       stops without releasing its locks, another running thread couldn't acquire
+       the locks and is force to wait.                                          
+                                                                                
+Java developers implements a thread interruption policy based on thread inter-  
+collaboration: a thread can be interrupted by another thread by setting its     
+interrupted flag. It’s up to the interrupted thread whether to stop or not,     
+without being obliged to "suicide". A thread can invoke the interrupt() method to
+interrupt a thread; then, the interrupted thread, can check its status by acces-
+sing its own 'interrupt' flag with the help of 'Thread.interrupt()' static method. 
+Thread.interrupt() will clear and read the flag. Also, a thread can check the   
+status of another thread using 'isInterrupted()' method: the latter will not    
+modify the flag.                                                                
+                                                                                
+Let's see a working example:                                                    
++===================================java========================================+
+public class MyThread extends Thread {                                          |
+    @Override                                                                   |
+    public void run() {                                                         |
+        long threadId = Thread.currentThread().threadId();                      |
+        while(!Thread.interrupted()) {                                          |
+            System.out.println("Hi, I'm Thread" + threadId);                    |
+            try {                                                               |
+                sleep(333);                                                     |
+            } catch (InterruptedException e) {                                  |
+                System.out.println("Hi, I'm Thread" + threadId +                |
+                                   ", I've been interrupted...");               |
+            }                                                                   |
+        }                                                                       |
+    }                                                                           |
+}                                                                               |
+                                                                                |
+public class Main {                                                             |
+    public static void main(String[] args ) {                                   |
+        MyThread thread = new MyThread();                                       |
+        thread.start();                                                         |
+        try {                                                                   |
+            sleep(5000);                                                        |
+        } catch (InterruptedException e) {                                      |
+            throw new RuntimeException(e);                                      |
+        }                                                                       |
+        thread.interrupt();                                                     |
+    }                                                                           |
+}                                                                               |
++===============================================================================+
+
+
+                        ================================                        
+                           Java Threads: What vs How                            
+                        ================================                        
+                                                                                
+There is a difference between Java.Thread and Java.Runnable (aside from the for-
+mer being a class and the latter being a functional interface):                 
+                                                                                
+    Java.Thread is how a thread can be built, while Java.Runnable defines       
+    what a thread should do (i.e., its task).                                   
+                                                                                
+Thanks to Java.Thread and Java.Runnable, we have a mechanism to manage different
+tasks by creating a new Runnable object and passing it to a thread. Where could 
+such an approach be exploited? Let's consider a server: it is realistic that a  
+server needs to handle different kinds of requests. It is quite common, in order
+to boost performance, to spawn a new thread for each incoming request. By follo-
+wing such an approach, it could be useful to assign a different task depending  
+on the type of request we are dealing with. By instantiating a Thread and passing 
+a Runnable object to its constructor, we can assign a different task based on the
+request we are currently dispatching.                                           
+                                                                                
+The task execution could be done in many different ways. A general solution asks
+for developing classes aimed at this. Such classes must implement at least the  
+'Executor' interface:                                                             
++===================================java========================================+
+public class MySimpleExecutor implements Executor {                             |
+    @Override                                                                   |
+    public void execute(Runnable command) {                                     |
+        /* The executor will run the submitted task without                     |
+         * spawning a new thread. */                                            |
+        command.run();                                                          |
+    }                                                                           |
+}                                                                               |
+                                                                                |
+public class MySpawningExecutor implements Executor {                           |
+    @Override                                                                   |
+    public void execute(Runnable command) {                                     |
+        /* Our custom executor will spawn a new thread                          |
+         * for each submitted task. */                                          |
+        new Thread(command).start();                                            |
+    }                                                                           |
+}                                                                               |
+                                                                                |
+public class Main {                                                             | 
+    public static void main(String[] args ) {                                   |
+        Runnable task1 = () -> {                                                |
+            var threadId = Thread.currentThread().threadId();                   |
+            System.out.println("Hi, I'm Thread" + threadId +                    |
+                               ". I'm executing task1.");                       |
+        };                                                                      |
+                                                                                |
+        Runnable task2 = () -> {                                                |
+            var threadId = Thread.currentThread().threadId();                   |
+            System.out.println("Hi, I'm Thread" + threadId +                    |
+                               ". I'm executing task2.");                       |
+        };                                                                      |
+                                                                                |
+        Executor simpleExecutor = new MySimpleExecutor();                       |
+        for (var i = 0; i < 10; i++)                                            |
+            simpleExecutor.execute(task1);                                      |
+                                                                                |
+        Executor spawningExecutor = new MySpawningExecutor();                   |
+        for (var i = 0; i < 10; i++)                                            |
+             spawningExecutor.execute(task2);                                   |
+    }                                                                           |
+}                                                                               |
++===============================================================================+
+
+
+                        ================================                        
+                                  Thread Pooling                                
+                        ================================                        
+                                                                                
+The idea behind thread pooling is very simple:                                  
+    1. Think about a server which needs to serve many different requests as fast
+       as possible.                                                             
+    2. If the server spawned a thread for each new incoming request, it could be
+       possible that the number of threads grows quickly, thus creating some    
+       problem.                                                                 
+                                                                                                                    
+It is not reasonable to allow an unbounded amount of threads to execute at the  
+same time a large number of tasks, because:                                     
+    1. The number of CPUs/cores is limited.                                     
+    2. Memory is a limited resource!                                            
+                                                                                
+Consider the following example:                                                 
++===================================java========================================+
+class Server extends Thread {                                                   |
+        private final List<Task> queue;                                         |
+        Server(List<Task> queue) { this.queue = queue; }                        |
+                                                                                |
+        @Override                                                               |
+        public void run() {                                                     |
+            while (!Thread.interrupted()) {                                     |
+                synchronized (queue) {                                          |
+                    while (queue.isEmpty()) {                                   |
+                        try {                                                   |
+                            queue.wait();                                       |
+                        } catch (InterruptedException e) {                      |
+                            System.out.println("Server is shutting down...");   |
+                            return;                                             |
+                        }                                                       |
+                    }                                                           |
+                    /* For each new request, i.e. Task, a new thread            |
+                     * will be spawned. */                                      |
+                    new Thread(queue.remove(0)).start();                        |
+                    queue.notifyAll();                                          |
+                }                                                               |
+            }                                                                   |
+            System.out.println("Server is shutting down...");                   |
+        }                                                                       |
+    }                                                                           |
++===============================================================================+
+A possible output could be the following:                                       
+                                                                                
+Task >> clientId: 21, executed by Thread23                                      
+Task >> clientId: 22, executed by Thread24                                      
+Task >> clientId: 21, executed by Thread25                                      
+Task >> clientId: 22, executed by Thread26                                      
+Task >> clientId: 21, executed by Thread27                                      
+Task >> clientId: 22, executed by Thread28                                      
+Task >> clientId: 22, executed by Thread29                                      
+Task >> clientId: 21, executed by Thread30                                      
+Task >> clientId: 22, executed by Thread31                                      
+Task >> clientId: 21, executed by Thread32                                      
+Server is shutting down...                                                      
+                                                                                
+If the number of submitted tasks grows quickly, also the number of threads grows
+suddenly fast.                                                                  
+A better way to deal with it is to make use of a constant number of threads:    
+    1. We keep a bunch of threads awaiting for a task to be executed; once the  
+       submitted task has been finished, the worker thread will sleep for a while
+       until a new task is available.                                           
+    2. Such a solution may not be optimal in terms of response time (there could
+       be scenarios in which all the threads are unavailable), but it allows us 
+       to keep track of the resources currently being used.                     
+                                                                                
+java.util.concurrent.Executors has factory methods to create instances of       
+executors with pooled threads, e.g.:                                            
+    1. newFixedThreadPool(int n) creates a pool of n threads, with fixed size.  
+    2. newCachedThreadPool() provides a thread pool that creates new threads as  
+       needed, but will reuse previously constructed threads when they are      
+       available.                                                               
+    3. newWorkStealingPool(int parallelism) creates a pool with dynamically      
+       managed threads, able to handle the specified level of parallelism; the  
+       task execution order does not necessarily reflect the order of submission.
+                                                                                
+Let's see some examples:                                                        
++===================================java========================================+
+class Server extends Thread {                                                   |
+        final List<Task> queue;                                                 |
+        private final static int NUM_THREADS = 2;                               |
+        private final ExecutorService threadPoolExecutor =                      |
+                                Executors.newFixedThreadPool(NUM_THREADS);      |
+                                                                                |
+        Server(List<Task> queue) {                                              |
+            this.queue = queue;                                                 |
+        }                                                                       |
+                                                                                |
+        @Override                                                               |
+        public void run() {                                                     |
+            while (!Thread.interrupted()) {                                     |
+                synchronized (queue) {                                          |
+                    while (queue.isEmpty()) {                                   |
+                        try {                                                   |
+                            queue.wait();                                       |
+                        } catch (InterruptedException e) {                      |
+                            System.out.println("Server is shutting down...");   |
+                            return;                                             |
+                        }                                                       |
+                    }                                                           |
+                    /* We submit a new task to the queue of thread pool. If     |
+                     * there is an idle thread, the task will be scheduled to   |
+                     * being executed. */                                       |
+                    threadPoolExecutor.submit(queue.remove(0));                 |
+                    queue.notifyAll();                                          |
+                }                                                               |
+            }                                                                   |
+            System.out.println("Server is shutting down...");                   |
+        }                                                                       |
+    }                                                                           |
++===============================================================================+
+A possible execution could be the following:                                    
+                                                                                
+Task >> clientId: 21, executed by Thread23                                      
+Task >> clientId: 22, executed by Thread24                                      
+Task >> clientId: 21, executed by Thread24                                      
+Task >> clientId: 22, executed by Thread23                                      
+Task >> clientId: 21, executed by Thread24                                      
+Task >> clientId: 22, executed by Thread23                                      
+Task >> clientId: 21, executed by Thread24                                      
+Task >> clientId: 22, executed by Thread23                                      
+Task >> clientId: 21, executed by Thread24                                      
+Task >> clientId: 22, executed by Thread23                                      
+Server is shutting down...                                                      
+                                                                                
+We can notice that only two threads are serving the incoming requests! In the   
+solution with the spawning server, for each new request the server will spawn a 
+new thread to serve the request: possible unbounded number of threads!          
+
+                                                                                
+                                                                                
+                        ================================                        
+                        How to deal with Thread's result                        
+                        ================================                        
+                                                                                
+If we were using the Thread-by-subclassing approach or Runnable functional inter-
+faces, we would have no means to return a result. How do we deal with a possible
+result being produced by an asynchronous computation?                           
+Java allows us to use a generic-based approach with the Future<> interface, as  
+follows:                                                                        
+        public interface Future<V> {                                            
+            boolean isDone();                                                   
+            V get();                                                            
+            boolean cancel(boolean mayInterruptIfRunning);                      
+            boolean isCanceled();                                               
+        }                                                                       
+Thanks to Java Futures, we can manage results produced by asynchronous computa- 
+tions, such as a thread carrying out a task. A Future can be 'written' just once,
+i.e., the value of a Future can be written by just one promise function. Multiple
+promise functions can be associated to write the value of a Future, but only one
+of them will write the value. Specifically, the first function that terminates  
+will write its result.                                                          
+If we'd like to use Executors and we need to deal with results, Java made availa-
+ble the 'ExecutorService' interface or 'ScheduledExecutorService'.              
+Here's more detail:                                                             
+                                                                                
+    public interface ExecutorService {                                          
+        Future<?> submit(Runnable task);                                        
+        Future<V> submit(Callable<V> task);                                     
+        void shutdown();                                                        
+    }                                                                           
+                                                                                
+Why are there two different versions of submit()? Because whenever we need to   
+deal with a specific object being produced as a result of a computation, we need
+to specify the type of the object being returned by using the Callable interface
+when defining the task. Pay attention: Runnables can be used if the type of the 
+object being returned is not known at compile time.                             
+                                                                                
++===================================java========================================+
+private static class Task implements Callable<Result> {                         |
+        @Override                                                               |
+        public Result call() {                                                  |
+            var threadId = Thread.currentThread().threadId();                   |
+            var message  = "Hello, World!";                                     |
+            return new Result(threadId, message);                               |
+        }                                                                       |
+    }                                                                           |
+                                                                                |
+public class Server extends Thread {                                            |
+        final List<Task> queue;                                                 |
+        private final ExecutorService executor =                                |
+                                    Executors.newFixedThreadPool(2);            |
+        Server(List<Task> queue) { this.queue = queue; }                        |
+                                                                                |
+        @Override                                                               | 
+        public void run() {                                                     |
+            while (!Thread.interrupted()) {                                     | 
+                synchronized (queue) {                                          |
+                    while (queue.isEmpty()) {                                   |
+                        try {                                                   |
+                            queue.wait();                                       |
+                        } catch (InterruptedException e) {                      |
+                            System.out.println("Server is shutting down...");   |
+                            return;                                             |
+                        }                                                       |
+                    }                                                           |
+                    Future<Result> result = executor.submit(queue.remove(0));   |
+                    queue.notifyAll();                                          |
+                    try {                                                       |
+                        // Timed version of get() method                        |
+                        System.out.println(result.get(5, TimeUnit.SECONDS));    |
+                    } catch (InterruptedException e) {                          |
+                        System.out.println("Server is shutting down...");       |
+                        return;                                                 |
+                    } catch (ExecutionException | TimeoutException e) {         |
+                        throw new RuntimeException(e);                          |
+                    }                                                           |
+                }                                                               |
+            }                                                                   |
+            System.out.println("Server is shutting down...");                   |
+        }                                                                       |
+    }                                                                           |
++===============================================================================+
+A possible execution can be the following:
+
+Result being produced by Thread23, message <<Hello, World!>>
+Result being produced by Thread24, message <<Hello, World!>>
+Result being produced by Thread23, message <<Hello, World!>>
+Result being produced by Thread24, message <<Hello, World!>>
+Result being produced by Thread23, message <<Hello, World!>>
+Result being produced by Thread24, message <<Hello, World!>>
+Result being produced by Thread23, message <<Hello, World!>>
+Result being produced by Thread24, message <<Hello, World!>>
+Result being produced by Thread23, message <<Hello, World!>>
+Result being produced by Thread24, message <<Hello, World!>>
+Server is shutting down...
+
+
+
+                        ================================                        
+                           Thread-safe Data Structures                          
+                        ================================                        
+                                                                                
+In the Server implementation, we need to use a mechanism to synchronize Client's
+threads and Server thread accesses to the queue. Otherwise, there would have    
+happened an inconsistency. Java has made available a set of data structures that
+ensure synchronization:                                                         
+                                                                                
+    > java.util.Collections.synchronizedList(List<T>)                           
+    > java.util.Collections.synchronizedCollection(collection<T>)               
+    > java.util.Collections.synchronizedMap(Map<T>)                             
+                                                                                
+A “Synchronized” collection shows poor performance under high contention. The
+main reason is that they synchronize the whole collection!
+
+"Concurrent" data structures perform better than the "synchronized" counterpart
+because they only locks a portion of the collection, instead of the whole one.
+A "Concurrent" DS allows concurrent read operations and at the same time maintains
+integrity by synchronizing write operations.
+
+
+
+                        ================================                        
+                            Memory Consistency Rules                          
+                        ================================ 
+                                                                                
+Let's introduce the problem with an example:
++===================================java========================================+
+public class Singleton {                                                        |
+    private static SingletonObject ref = null;                                  |
+    public static SingletonObject getUniqueReference() {                        |
+        if (ref == null)                                                        |
+            ref = new SingletonObject();                                        |
+        return ref;                                                             |
+    }                                                                           |
+}                                                                               |
++===============================================================================+
+What about a multithreaded scenario? Such singleton implementation wont work be-
+cause there could be race conditions! Here we are: we need to use synchronized  
+blocks.
+
++===================================java========================================+
+public class Singleton {                                                        |
+    private static SingletonObject ref = null;                                  |
+    public static SingletonObject getUniqueReference() {                        |
+        if (ref == null)                                                        |
+            synchronized (ref) {                                                |
+                if (ref == null) ref = new SingletonObject();                   |
+            }                                                                   |
+        return ref;                                                             |
+    }                                                                           |
+}                                                                               |
++===============================================================================+
+Why do we need to check once more if ref == null? Because no one ensure us that 
+after the "first check", i.e., the first if (ref == null), no other threads have 
+been scheduled and constructed the singleton object before us. Even if it may seem
+that such implementation is a good one, writes on ref could be reordered or their
+publication could be delayed => It doesn't work yet...
+
++===================================java========================================+
+public class Singleton {                                                        |
+    private static volatile SingletonObject ref = null;                         |
+    public static SingletonObject getUniqueReference() {                        |
+        if (ref == null)                                                        |
+            synchronized (ref) {                                                |
+                if (ref == null) ref = new SingletonObject();                   |
+            }                                                                   |
+        return ref;                                                             |
+    }                                                                           |
+}                                                                               |
++===============================================================================+
+What does it mean volatile?

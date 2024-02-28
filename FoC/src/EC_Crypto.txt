@@ -135,7 +135,9 @@ are points on the curve. The public keys are computed by "point multiplication",
 point addition n-times. The two parties exchange these public parameters with each other. The joint
 secret Kab is then computed by both Alice and Bob by performing a second point multiplication 
 involving the public key they received and their own secret parameter. The joint secret Kab can be
-used to derive a session key. Note that the two coordinates (xAB , yAB ) are not independent of each 
+used to derive a session key. Note that the two coordinates (xAB , yAB) are not independent: we should
+not use either xAB or yAB as-is but it is convenient to "obscure" such dependency by, for example, 
+hashing them. 
 other: Given xAB , the other coordinate can be computed by simply inserting the x value in the 
 elliptic curve equation. Thus, only one of the two coordinates should be used for the derivation of a 
 session key.

@@ -1,0 +1,186 @@
+                      ====================================
+                       Modelling Distributed Computations
+                      ====================================
+                                                                                
+How can we model the state of execution in a distributed system?
+
+    1. A distributed system consists of a static set of nodes. Each node can be
+    considered as a process (a node is just a place where a process is located).
+
+    2. Each process has its own state, which is a sequence of events represented
+    as E[k][i], where index [k] represents the k-th process in the system, and 
+    index [i] represents the i-th event sequentially occurring at process k.
+    
+    3. Within a process, events are ordered, meaning that we can define a to-
+    total order over the set of the events E.
+
+Given the distributed nature, events can vary:
+                                                                                
+    > INTERNAL EVENTS: events that are not influenced by any other process.
+    > COMMUNICATION EVENTS: a pair of send(m)-receive(m). Such pairs are typi-
+    cally asynchronous but not necessarily.
+ 
+The sequence of events executed by a process k is named as its HISTORY, i.e.,
+                    Hk = {E[K][1], E[K][2], ..., E[K][n]}
+
+A prefix of a process history corresponds to a progression point in the local
+execution.
+
+We are used to the concept of state for a local process. What about the state of
+of distributed system? Now, we have to deal with the composition of N states.
+
+CUT: a set composed of N prefixes, where each element is a process' prefix. 
+
+CONSISTENT CUT: a cut where for each "receive(m)" event the corresponding "send(m)"
+event belongs to the cut as well.
+
+Let's make a few examples to better understand what is a consistent cut. To model
+the state of the distributed system we may use space-time diagrams: each temporal
+line in the diagram is associated to a process, representing its state. Each mark
+in a process' temporal line represents an event happened to that process. Arrows 
+are a visual representation of an asynchronous send(m)-receive(m) event.
+
+
+EXAMPLE 1:
+
+--------------------------+ C1
+                          |
+                          |
+P[1] ----1----------2-----|-------3-------4--------5--------->
+                     \    |      +
+                      \   |     /
+                       +  |    /
+P[2] -1----2------------3-|---/--------4--------------------->
+                          |  /
+                          | /
+P[3] -----------1---------|2-------------3--4----5----------->
+                 \        |
+                  \       |
+                   +      |
+P[4] -------1-------2--3--|-------------4----------5--------->
+                          |
+                          |
+--------------------------+
+
+Let's consider the cut C1 = {{1,2}, {1,2,3}, {1}, {1,2,3}}. The prefix of process 
+P[1] consists of two events, H[1] = {1,2}, where event 2 is a send event. Process 
+P[2] contains a receive event in its prefix; the corresponding send(m) event belongs 
+to P[1]'s prefix, thus it's part of the cut. Process P[4] also contains a receive 
+event (event 2), and the corresponding send(m) belongs to P[3]'s prefix, so it's 
+part of the cut. Therefore, the cut is consistent.
+
+
+EXAMPLE 2:
+
+-------------+ C2
+             |
+             |
+P[1] ----1---|------2-------------3-------4--------5--------->
+             |       \           +
+             ---------\----     /
+                       +  |    /
+P[2] -1----2------------3-|---/--------4--------------------->
+                          |  /
+                          | /
+P[3] -----------1---------|2-------------3--4----5----------->
+                 \        |
+                  \       |
+                   +      |
+P[4] -------1-------2--3--|-------------4----------5--------->
+                          |
+                          |
+--------------------------+
+
+Let's consider the cut C2 = {{1}, {1,2,3}, {1}, {1,2,3}}. Process P[2] contains 
+a receive event in its prefix: the corresponding send(m) event DOES NOT belong 
+to P[1]'s prefix, thus cut C2 is NOT consistent!
+
+Notice that we can define an ordering over consistent cuts: we can use set 
+inclusion relation: given two cuts C1 and C2, we say that C1 <= C2 if C2 strictly
+includes C1.
+
+
+                      ====================================
+                                 Notion of Time
+                      ====================================
+                                                           
+In a distributed system it is not possible to have clocks at all the nodes in
+perfect synch. Such a synchronization can be achieved within a certain tolerance.
+Without a global time, we need to understand how to relate events executed at 
+different progression points.
+
+To describe the flow of control of a distributed execution we can exploit the 
+precedence relations among its events.
+
+HAPPENS-BEFORE relation: consider a precedence relation among two events, i.e., 
+e-->f.
+
+    HB0 [Transitivity] - Given three events e, f, and such that:
+        1. e--HB-->f
+        2. f--HB-->g
+    Then it follows e--HB-->g 
+
+    HB1 [In-Process Ordering] - Consider two events e and f in the same process p.
+    If there is a precedence relation e-->f within the process, then e--HB-->f as well.
+
+    HB2 [Asynchronous Communication] - Consider an event e = send(m) and its 
+    corresponding f = receive(m). If send(m) is no-blocking (not synchronous), then
+    e--HB-->f.
+
+    HB3 [Synchronous Communication] - Consider an event e = send(m) and its 
+    corresponding f = receive(m). Consider an event g such that e--HB-->g and an
+    event h such that f--HB-->h. If send(m) is blocking (synchronous), then 
+        > e--HB-->h 
+        > f--HB-->g
+
+With HB relation we can define if two events are concurrent, i.e., given two events 
+e and f then e || f if neither e--HB-->f nor f--HB-->e are true.
+
+
+                      ====================================
+                            Clocks for Logical Time
+                      ====================================
+
+If we need to deal with the relative orderings of event occurrences, we can substi-
+tute the “global time” with an index that relates to the ordering of events. 
+
+A logical clock C() is a method to map events onto a partial order, i.e., if 
+event e and f are related to each other by e--HB-->f then C(e) < C(f) holds.
+
+LAMPORT TIMESTAMPS: The Lamport timestamp algorithm is a simple logical clock 
+algorithm used to determine the order of events in a distributed computer system. As
+different nodes or processes will typically not be perfectly synchronized, this al-
+gorithm is used to provide a partial ordering of events with minimal overhead.
+
+Let's see how it works:
+
+    (1) Each process has itw own clock, i.e., process P[i] maintains clock C[i].
+    (2) For each event e in process P[i], excluded receive events, clock is 
+    incremented by 1 and then assigned to the event e, T[i](e) = ++C[i].
+    (3) For each send event, the logical clock C[i] is piggybacked to the message.
+    (4) When a receive event occur, i.e., process P[i] receives a message from process
+    P[j], local clock is updated as C[i] = max(C[i], C[j]) and then T[i](e) = ++C[i].
+
+Let's see an example:
+
+         1                 2      3       4        5
+P[1] ----*-----------------*------*-------*--------*--------->
+                            \    /
+                             \  /
+                              \/
+                              /\
+                             /  \
+                1           +    +         6  7         8
+P[2] -----------*----------*------*--------*--*---------*----->
+                 \         4      5       +    \
+                  \                      /      \
+        1          +                    /        \      3
+P[3] ----*---------*-------------------/----------\-----*----->
+                   2                  /            \ 
+                                     /              +
+P[4] -------------------------------*----------*-----*-------->
+                                    1          2     8
+
+Which are the properties of Lamport Timestamps?
+
+1) Obv, clock consistency, i.e., if e--HB-->f then Tlp(e) < Tlp(f).

@@ -352,15 +352,3 @@ I codici convoluzionali sono principalmente adatti per canali *memoryless* con e
 ![Diagramma a blocchi di un sistema $\mathsf{Tx\text{-}Rx}$ che adopera il meccanismo di interleaving.](figures/diversity/interleaving_chain.png)
 
 L'interleaving viene realizzato diffondendo i simboli codificati nel tempo o nella frequenza prima della trasmissione. In ricezione, si esegue l'operazione inversa (deinterleaving) della sequenza ricevuta. L'interleaving fa sì che gli errori (quest'ultimi molto ravvicinati tra loro a causa del canale fortemente fading in quel punto) sembrino casuali, consentendo così ai codici convoluzionali di ottenere prestazioni migliori. Il costo dell'interleaving è la *latenza*: sia al trasmettitore che al ricevitore è necessario avere l'intero blocco di dati per avviare il processo di codifica/decodifica. C'è un compromesso: maggiore è la profondità dell'interleaver $\mathsf{K}$, maggiormente gli errori sono decorrelati, ma al contempo crescono la latenza e il ritardo.
-
-
-## Turbo Codes
-
-
-
-\newpage{}
-
-
-# Spatial Diversity
-
-

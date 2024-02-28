@@ -1,0 +1,134 @@
+                        ================================                        
+                                 Physical Clocks                                 
+                        ================================ 
+
+Each node has its own clock, i.e., there could be some difference between a clock
+that has been chosen has a reference and the clock of that node. Before studying 
+how synchronize clocks with respect to an external/internal reference, we should 
+present the different standard clocks:
+                                                                                
+    UTC - Coordinated universal time, primary reference for the scientific commu-
+    nity, and based on International Atomic Time.
+    UT1 - Solar Time.
+    POSIX - Standard clock in IT. Number of seconds elapsed from 00:00:00 01/01/70
+
+Please, keep in mind that there could be some difference between the instantaneous
+time readings of UTC and UT1. Why so? Because the Earth rotation influences 
+(speeds up/ slows down) UT1. To lesser the effects of Earth rotation, from time 
+to time UT1 is corrected by slowing down/speeding up its pace with respect to UTC.
+
+Some useful definitions about clocks:
+    SKEW: difference between two instantaneous readings of clocks.
+    DRIFT: difference in the pace of two different clocks.
+
+Keeping two clock synchronized means imposing an upper bound D on any of their in-
+stantaneous reads. To impose an upper bound D, we can proceed following two ways:
+
+EXTERNAL SYNCHRONIZATION. An external source keeps the reference clocks. At any 
+time, the difference between the instantaneous reading of a node and the reference
+time must be lesser than a fixed threshold D, that is |C(t) - S(t)| < D. 
+
+INTERNAL SYNCHRONIZATION: All nodes within a system collaborate to keep their clocks
+synchronized. We'll discuss how a group of nodes can achieve this objective later. 
+At any given time, the difference between the instantaneous clock's reading of node 
+i and node j must be less than a fixed threshold D, i.e., |Ci(t) - Cj(t)| < D.
+
+
+
+                        ================================                        
+                        Clock Synchronization Algorithms                                    
+                        ================================ 
+
+How do we ensure clock synchronization? There are two different approaches.
+
+Cristian's Algorithm: This algorithm relies on a trusted source chosen as the 
+reference time. Each node in the system queries the source, and then adjusts its
+own clock based on the source's response. Here's a brief overview:
+
+                            NODE  SOURCE 
+                            |       |
+                            +       |
+                            |\      |
+                            | \     |
+                            |  \    |
+                            |   \   |
+                            |    \  |
+                            |     \ |
+                            |      \|
+                            |       + SOURCE receives NODE's clock 
+                            |      /| synchronization request
+                            |     / |
+                            |    /  |
+                            |   /   |
+                            |  /    |
+                            | /     |
+                            |/      |
+       NODE receives SOURCE +       |
+       answer               |       | 
+                            v       v
+
+Assuming that the SOURCE, upon receiving the NODE's synchronization request, reads 
+t*, then the NODE will update its clock with C = t* RTT/2. This algorithm is reliable
+under the following assumptions:
+    1. Both legs of the trip should have roughly equal trip times. If one leg of the
+    trip significantly differs in duration from the other, the calculated value for 
+    C may be too high or too low. However, by reducing the RTT, the value of C will 
+    remain relatively consistent. Therefore, with multiple attempts, this algorithm 
+    can provide an average that is usually a good approximation of the correct value 
+    to use.
+    2. RTT << 1
+
+Berkley Algorithm: Unlike Cristian's algorithm, the server process in the Berkeley 
+algorithm, called the leader, periodically polls other nodes. Generally speaking, 
+the algorithm is:
+
+    1. A leader is chosen via an election process.
+    2. The leader polls the nodes who reply with their time in a similar way to 
+    Cristian's algorithm.
+    3. The leader observes the round-trip time (RTT) of the messages and estimates 
+    the time of each follower and its own.
+    4. The leader then averages the clock times, ignoring any values it receives 
+    far outside the values of the others (outliers).
+    5. Instead of sending the updated current time back to the other process, the 
+    leader then sends out the amount (positive or negative) that each follower must 
+    adjust its clock. This avoids further uncertainty due to RTT.
+
+Computer systems normally avoid rewinding their clock when they receive a negative 
+clock alteration from the leader. Doing so would break the property of monotonic time,
+which is a fundamental assumption in certain programs. A simple solution to this 
+problem is to halt the clock for the duration specified by the leader, but this 
+simplistic solution can also cause problems, although they are less severe. For 
+minor corrections, most systems slow the clock, applying the correction over a 
+longer period of time.
+
+Network Time Protocol: NTP is a networking protocol for clock synchronization between
+computer systems over packet-switched, variable-latency data networks. In operation 
+since before 1985, NTP is one of the oldest Internet protocols in current use. NTP 
+was designed by David L. Mills of the University of Delaware.
+
+NTP SYMMETRIC MODE:
+
+                    t(0)           t(3)
+        SERVER A -----+--------------+--------------------->
+                       \            /
+                      m \        m'/
+                         \        /
+        SERVER B ---------+------+------------------------>
+                        t(1)   t(2)
+
+Server A queries Server B its own time. Such query will evade Server A at instant t(0)
+and it will arrive at Server B at instant t(1). m represents the trip time of trip leg
+Server A --> Server B. Quite similarly, Server B responds to Server A at instant t(2)
+and Server A will receive Server B's response at instant t(3).
+
+The assumption is that Server A's clock and Server B's clock are now synchronized. If 
+they were synchronized, then we would have:
+
+    m  = t(1) - t(0)
+    m' = t(3) - t(2)
+
+NTP algorithm is based on the aforementioned assumption: it exists an offset o. We'd
+like to compute such an offset (or at least an approximation):
+
+    m  = t(1) - t(0) - o   ==>   t(1) = t(0) + m  + o   ==>    o = t(1) - t(0) - m
+    m' = t(3) - t(2) + o   ==>   t(3) = t(2) + m' - o   ==>    o = t(2) - t(3) + m'

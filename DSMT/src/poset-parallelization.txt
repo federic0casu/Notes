@@ -1,0 +1,227 @@
+                        ================================                        
+                                      Poset                                     
+                        ================================                        
+                                                                                
+Consider a set of actions, A, and a set of precedence constraints, PC. The latter
+is simply a set of binary relations between the actions. To be precise, each ele-
+ment of PC models a precedence relation between two actions, Ai and Aj, represen-
+ting which one of them comes before (also called happens-before relation).
+      
+A POSET (Partially Ordered Set) is a set A with a partial order defined over its 
+elements. It serves as the mathematical foundation for representing computations.
+We can define two types of partial orders:
+
+NON-STRICT PARTIAL ORDER: a non-strict partial order consists of a set of prece-
+dence constraints plus its transitive closure, with the following properties:
+    REFLEXIVITY: for any a in A --> a <= a
+    ANTISYMMETRY: if a <= b and b <= a then a = b. If a partial order is anti-
+                  symmetric, it also means if a <= b and a != b then b NOT(<=) a
+    TRANSITIVITY: if a <= b and b <= c, then a <= c
+                                                                                
+STRICT PARTIAL ORDER: a NON-STRICT PARTIAL ORDER without the REFLEXIVITY property.
+
+The question now is how to concisely represent a poset. To do that at best, we
+use the Hasse Diagram, that is a transitive reduction of PC. An Hasse Diagram
+contains as nodes all the elements of our poset and as edges the transitive re-
+duction of PC.                                                                  
+
+
+                                                                                
+                                                                                
+                        ================================                         
+                              Notion of CONCURRENCY                              
+                        ================================                        
+                                                                                
+How can formalize the notion of concurrency with the notion of partial order?   
+
+    CONCURRENCY: two actions Ai and Aj, Ai != Aj, are said to be concurrent if  
+    neither Ai <= Aj nor Aj <= Ai (it is written as Ai || Aj).                  
+                                                                                
+Please, keep in mind that the notion of concurrency does not have the property  
+of TRANSITIVITY. Consider the following DAG:                                    
+                                                                                
+    (A)---+(B)---+(C)           Legend: (A) action                              
+     |             +                     -+ oriented edge
+     |            /
+     +           /
+    (D)---+(E)--+                                                            
+                                                                                
+As we can see:                                                                  
+    1. neither B <= D nor D <= B, then B || D                                   
+    2. neither C <= D nor D <= C, then C || D                                   
+But we cannot sai that B || C because exists a happens-before relation between  
+B and C, that is B <= C.                                                        
+                                                                                
+Sometimes we are interested in how to split a set of actions among a bunch of
+threads. More in detail:
+
+    - We would like to find a subset of actions that are sequentially ordered,
+      i.e., it exists a happens-before relation among all of the actions.
+    - Once we've found such subset of actions, we would like to assign such sub-
+      set to a process in order to execute them sequentially.
+
+CHAIN: a chain is a directed path of the DAG. To be precise, a chain is a subset
+of the set of actions A over which it can be defined a total order.
+
+TOTAL ORDER: It is a PARTIAL ORDER with the property of TOTALITY. i.e., for any 
+pair of actions (Ai, Aj) it exists either Ai <= Aj or Aj <= Ai.
+
+                                                                                
+                                                                                
+                        ================================                         
+                              Topological Sorting                                
+                        ================================                        
+
+Consider a poset. How should we order the elements of set A if we'd like to 
+assign the execution of such actions to a single process (e.g. a thread)? Keep in
+mind that we need to respect all the precedence constraints defined in PC+.
+
+Fact 1. For any DAG, it exists a total order. Such total order is unique. 
+
+Good news: thanks to Fact 1, we can define a total order over the set of actions A
+and then we can schedule the corresponding computations according to the total order.
+
+KAHN's ALGORITHM - The algorithm finds a total order defined over A. 
+                   It works as follows:
+
+    SETUP: define two empty sets SN = {} and M = {}. Populate set SN with each node
+           of the DAG that has no incoming edges (SN follows from Starts Nodes). 
+           Populate set M with all the remaining nodes.
+
+    ALGORITHM:
+         1. while SN is not empty:
+                1.1 Pick a node (n) from set SN and insert (n) in the result
+                    list L (tail insertion).
+                1.2 Remove all the outgoing edges of node (n) from DAG.
+                1.3 Check if there is any node (m) in M whose has no incoming edges. 
+                    Put each node that fulfills the condition mentioned above in
+                    set SN and remove it from M.
+         2. if DAG contains one or more edges -> Raise an error.
+         3. else return list L
+
+Example:
+
+          (A)    (B)           SETUP: SN = {A,B}, M = {C,D,E,F,G}, L = {}
+           |      |            -----------------------------------------------------
+           /      /            Iteration (1): node (A).
+           |      |                           1.1 L = {A};
+           +      +                           1.2 Delete edge (A)-->(C);
+          (C)-/-+(D)                          1.3 Put (C) in SN; Remove (C) from M.
+           | \    |
+           /  /   /            After iteration (1): SN = {B,C}, M = {D,E,F,G}                             
+           |   \  |                                 L = {A}
+           |    \ |            -----------------------------------------------------
+           +     ++
+          (E)    (F)           -----------------------------------------------------
+            \     |            Iteration (2): node (C).
+             \    |                           1.1 L = {A-->C};
+              /   /                           1.2 Delete edges (C)-->(E), (C)-->(F),
+               \  |                               (C)-->(D).
+                \ |                           1.3 Put (E) in SN; Remove (E) from M.
+                 ++            
+                 (G)           After iteration (2): SN = {B,E}, M = {D,F,G}                             
+                                                    L = {A-->C}
+                               -----------------------------------------------------
+
+                               -----------------------------------------------------
+                               Iteration (3): node (E).
+                                              1.1 L = {A-->C-->E};
+                                              1.2 Delete edge (E)-->(G).
+
+                                After iteration (3): SN = {B}, M = {D,F,G}  
+                                                     L = {A-->C-->E}
+                                ----------------------------------------------------
+
+                                ----------------------------------------------------
+                                Iteration (4): node (B).
+                                              1.1 L = {A-->C-->E-->B};
+                                              1.2 Delete edge (B)-->(D).
+                                              1.3 Put (D) in SN. Remove (D) from M.
+
+                                After iteration (3): SN = {D}, M = {F,G}  
+                                                     L = {A-->C-->E-->B}
+                                ----------------------------------------------------
+
+                                ----------------------------------------------------
+                                Iteration (5): node (D).
+                                              1.1 L = {A-->C-->E-->B-->D};
+                                              1.2 Delete edge (D)-->(F).
+                                              1.3 Put (F) in SN. Remove (F) from M.
+
+                                After iteration (3): SN = {F}, M = {G}  
+                                                     L = {A-->C-->E-->B-->D}
+                                ----------------------------------------------------  
+
+                                ----------------------------------------------------
+                                Iteration (6): node (F).
+                                              1.1 L = {A-->C-->E-->B-->D-->F};
+                                              1.2 Delete edge (F)-->(G).
+                                              1.3 Put (G) in SN. Remove (G) from M.
+
+                                After iteration (3): SN = {G}, M = {/}  
+                                                     L = {A-->C-->E-->B-->D-->F}
+                                ----------------------------------------------------    
+
+                                ----------------------------------------------------
+                                Iteration (6): node (G).
+                                              1.1 L = {A-->C-->E-->B-->D-->F-->G};
+                                              1.2 Delete edge (F)-->(G).
+                                              1.3 Put (G) in SN. Remove (G) from M.
+
+                                After iteration (3): SN = {}, M = {/}  
+                                                     L = {A-->C-->E-->B-->D-->F-->G}
+                                                     return L
+                                ----------------------------------------------------
+
+                                                                                
+                                                                                
+                        ================================                         
+                                  Amdahl's Law                               
+                        ================================                        
+
+How can we estimate the benefits of parallelization? Consider the following example:
+
+    1. Suppose we have a program, P, and its running time is represented by t(P). 
+    The boss asks us to improve the performance of program P by means of paralleli-
+    zation. We parallelize the program, obtaining P*. Now, P*'s running time is 
+    t(P*). We define S = t(P)/t(P*) as the speedup, i.e., how much faster/slower 
+    program P* terminates with respect to program P. Obviously, to obtain a perfor-
+    mance improvement, t(P*) < t(P).
+
+    2. It is often the case that a program P cannot be entirely parallelized; that 
+    is, there exists a fraction of P that must be executed sequentially. With that 
+    in mind, we can say that the running time of a parallelized program is 
+    t(P*) = s + p, where s is the sequential fraction of the program and p is the 
+    parallelized one.
+
+    3. We can define the proportion between the sequential part of the program with 
+    respect to the parallel one as alpha = s / (s + p/n), where n is the number of 
+    CPUs at our disposal.
+
+    4. We can see that the overall speedup depends on both the sequential part of 
+    the program and the number of CPUs. More specifically:
+    S = t(P)/t(P*) = (s + p) / (s + p/n) = p / (s + p/n) = 1 / (alpha + (1-alpha)/n)
+
+ speedup
+    +
+    |          / alpha = 0
+    |         /
+    |        /      +---------------------------- alpha(1)
+    |       /     /
+    |      /    /
+    |     /   /  
+    |    /  /  +--------------------------------- alpha(2)
+    |   / /  /
+    |  //  /
+    | /  +--------------------------------------- alpha(3)
+    |/ /
+    +-------------------------------------------+ number of CPUs
+
+where alpha(1) < alpha(2) < alpha(3), i.e., the bigger the sequential part, the lower
+the speedup as the number of CPUs increases.
+
+The best situation we can have is the one where the sequential part is zero, so the 
+program is fully parallelizable. If we don’t have any parallelizable portion, the 
+runtime will be the same whichever the number of processors is. As we increase alpha, 
+we won’t have linear improvement.
+

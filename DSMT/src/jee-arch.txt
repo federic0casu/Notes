@@ -1,0 +1,267 @@
+                      ====================================
+                                Web Applications
+                      ====================================
+
+In the early days, dynamic content was generated using CGI scripts. CGI stands
+for Common Gateway Interface, and it was a standard protocol used a long time 
+ago to instruct servers to run a script that would produce the content for a 
+dynamic web page.
+
+Is the CGI protocol efficient? I believe we can do better. With the CGI protocol,
+for each incoming HTTP request, the server searches for a script and then runs 
+that script, spawning a new process. This results in overhead for each HTTP re-
+quest, which could be eliminated by simply allowing the server to run the code to
+produce the dynamic content within its own context.                                               
+
+Here we are: Web Servers.
+Apache Tomcat is a web server and Java servlet container. Tomcat is composed of 
+three main modules:
+
+	1. Coyote, the module that is in carge to manage "HTTP connections". Once a 
+	   connection has been established, Coyote will forward the connection to the
+	   server engine Catalina.
+	2. Catalina, the engine and servlet container. It is in charge of letting the 
+	   servlets run and handle static/dynamic generation of web content (e.g. HTML
+	   content, ...).
+	3. Jasper, JSP container. 
+	
+Catalina as a Servlet Container
+One of the key requirements worked into the Servlet specification is that they 
+only are expected to handle certain parts of the total data transaction process. 
+For example, the servlet code itself will never listen for requests on a certain 
+port, nor will it communicate directly with a client, nor is it responsible for ma-
+naging its access to resources. Rather, these things are managed by Tomcat, the 
+servlet container.
+
+	1. Whenever we try to deploy our java application to Tomcat, it searches for the 
+	   Deployment Descriptor (Web.xml) file which contains information about URL and
+	   servlet mappings. Based on the configuration in deployment descriptor file, 
+	   Tomcat can load/initialize the servlet classes on startup or as a response to
+	   a request.
+	2. When Tomcat receives a request, it decides on which servlet should handle the
+	   request.
+	3. Once the request has been mapped to the appropriate servlet, Tomcat checks to 
+	   see if that servlet class has been loaded. If it has not, Tomcat compiles the 
+	   servlet into Java bytecode, which is executable by the JVM, and creates an in-
+	   stance of the servlet.
+	4. Tomcat invokes the service method of the servlet, to handle client’s request.
+	
+Thanks to the Deployment Descriptor file, Catalina can manage class loading for each
+required class. What about class loading and different contentx? We know that Tomcat
+can host multiple web apps at the same time. How to deal with classes that need to be
+loaded by different contenxts? In order to avoid conflicts, the class loading mechanism
+of Tomcat does not delegate first (excpet for core libraries such, i.e, the ones in 
+CATALINA_HOME/common/*).
+
+Tomcat's classloading mechanism can be depicted as follows:
+
+			+-------------+
+			|  Bootstrap  |  => Looks in jre/lib
+			+-------------+
+				   +
+				   |
+				   |
+			+-------------+
+			|  Extension  |
+			+-------------+
+				   +
+				   |
+				   |
+			+-------------+
+			|   System    |
+			+-------------+
+				   +
+				   |
+				   |
+			+-------------+
+			|Tomcat Common|  => Looks in: CATALINA_HOME/common/lib/
+			+-------------+               CATALINA_HOME/common/classes/
+			  +         +
+			  |         |
+			  |         |
+	+-------------+ +-------------+
+	|Tomcat Server| |Tomcat Shared|  => Looks in: CATALINA_HOME/shared/lib
+	+-------------+ +-------------+               CATALINA_HOME/shared/classes
+		                   +
+		                   |
+		                   |
+		            +-------------+
+		            |   Web App   |  => Looks in: CATALINA_HOME/webapps/[WAName]/WEB-INF/lib
+		            +-------------+               CATALINA_HOME/webapps/[WAName]/WEB-INF/classes
+		            
+		            
+A servlet is a Java-based server-side component that dynamically generates con-
+tent and interacts with web clients through the HTTP protocol. Servlets are 
+commonly used to generate dynamic web content or manage requests/responses. They
+run on the server-side (inside a servlet container such as Catalina) and can 
+handle various types of requests (GET, POST, PUT, ...), generating dynamic re-
+sponses accordingly. It's important to note that a servlet does not handle HTTP
+requests in terms of opening/closing TCP connections (the connector module is in
+charge of handle TCP connections); instead, a servlet handles the business logic
+needed to serve the associated HTTP request. Mappings <servelts, HTTP request> 
+are recognized by Tomcat (specifically, the Catalina engine, which is a servlet 
+container) thanks to the  Deployment Descriptor file or annotations.
+
+In Java, a servlet is just a class that implements jakarta.servlet.Servlet interface.
+There are many types of Java servlet: among them, the most used is HttpServlet.
+													
++===============================================================+
+@WebServlet(name = "SimpleServlet", urlPatterns = "/hello"})    |
+public class SimpleServlet extends HttpServlet {                |
+	                                                            |
+	@Override                                                   |
+	protected void init() hrows ServletException {              |
+        // Perform initialization tasks here                    |
+        System.out.println("Servlet initialization");           |
+    }                                                           |
+                                                                |
+    @Override                                                   |
+    protected void doGet(HttpServletRequest request,            |
+                         HttpServletResponse response)          |
+            throws ServletException, IOException {              |
+                                                                |
+        // Set the content type of the response                 |
+        response.setContentType("text/html");                   |
+                                                                |
+        // Get a PrintWriter object to write                    |
+        // HTML to the response                                 |
+        PrintWriter out = response.getWriter();                 |
+                                                                |
+        // Write HTML content to the response                   |
+        out.println("<h1>Hello, World!</h1>");                  |
+        out.println("<p>This is a simple servlet example.</p>");|
+                                                                |
+        // Close the PrintWriter                                |
+        out.close();                                            |
+    }                                                           |
+                                                                |
+    @Override                                                   |
+    public void destroy() {                                     |
+        // Perform cleanup tasks here                           |
+        System.out.println("Servlet destruction");              |
+    }                                                           |
+}                                                               |
++===============================================================+
+
+Catalina manages the lifecycle of servlets. The servlet lifecycle consists
+of several stages, including initialization, handling requests, and destruction.
+
+	1. Loading and Initialization: When Tomcat starts or when a web application
+	   containing servlets is deployed, Catalina loads and initializes the servlets.
+	   This involves creating instances of the servlet classes and calling their
+	   init() method. The init() method is typically used for one-time initialization
+	   tasks, such as setting up resources or establishing connections.
+
+	2. Handling Requests: Once initialized, servlets are ready to handle incoming
+	   requests. When a request is received for a URL that matches the servlet's 
+	   mapping, Catalina invokes the servlet's service() method. The service() method
+	   determines the type of request (e.g., GET, POST) and calls the appropriate 
+	   doGet(), doPost(), or other HTTP method-specific method.
+
+	3. Destruction: When Tomcat shuts down or when a web application is undeployed,
+	   Catalina destroys the servlets by calling their destroy() method. This gives
+	   servlets an opportunity to release any held resources or perform cleanup tasks.
+
+Catalina also provides session management capabilities for servlets. It maintains 
+session objects associated with client sessions, allowing servlets to store and 
+retrieve session-specific data.
+
+
+What about sessions? In Java, HttpSession is an interface provided by the Servlet
+API, which allows servlets to maintain session information across multiple HTTP
+requests and responses.
+
+When a client (e.g., a web browser) sends its first request to the server, the
+server creates a new HttpSession object associated with that client. This typically
+involves generating a unique session identifier (session ID) and storing it in a
+cookie on the client side or appending it to URLs. On subsequent requests from the
+same client, the server retrieves the session ID from the client (either from the 
+cookie or the URL) and uses it to retrieve the corresponding HttpSession object.
+
+
+                      ====================================
+                                      EJB
+                      ====================================
+
+Enterprise JavaBeans (EJBs): servser-side components that encapsulate business-logic
+of an application for a client.
+
+
+(1) Stateful Session Bean: The state of an object consists of the values of its instance
+variables. In a stateful session bean, the instance variables represent the state of a 
+unique client/bean session. Because the client interacts (“talks”) with its bean, this 
+state is often called the conversational state.
+As its name suggests, a session bean is similar to an interactive session. A session bean
+is not shared; it can have only one client. When the client terminates, its session bean
+appears to terminate and is no longer associated with the client.
+
++===============================================================+
+import javax.ejb.Stateful;                                      |
+                                                                |
+@Stateful                                                       |
+public class ShoppingCartBean implements ShoppingCartRemote {   |
+                                                                |
+    private List<String> items = new ArrayList<>();             |
+                                                                |
+    public void addItem(String item) {                          |
+        items.add(item);                                        |
+    }                                                           |
+                                                                |
+    public List<String> getItems() {                            |
+        return items;                                           |
+    }                                                           |
+                                                                | 
+    public void clear() {                                       |
+        items.clear();                                          |
+    }                                                           |
+}                                                               |
++===============================================================+
+
+This is a stateful session bean named ShoppingCartBean that represents a shopping
+cart. It allows adding items to the cart, retrieving the items, and clearing the cart. 
+It's annotated with @Stateful to indicate that it's a stateful session bean.
+
+
+(2) Stateless Session Bean: A stateless session bean does not maintain a conversational
+state with the client. When a client invokes the methods of a stateless bean, the bean’s
+instance variables may contain a state specific to that client but only for the duration
+of the invocation. 
+
++===============================================================+
+import javax.ejb.Stateless;                                     |
+                                                                |
+@Stateless                                                      |
+public class CalculatorBean implements CalculatorRemote {       |
+                                                                |
+    public int add(int a, int b) {                              |
+        return a + b;                                           |
+    }                                                           |
+                                                                |
+    public int subtract(int a, int b) {                         |
+        return a - b;                                           |
+    }                                                           |
+}                                                               |
++===============================================================+
+
+This is a stateless session bean named 'CalculatorBean' that provides basic 
+arithmetic operations. It's annotated with @Stateless to indicate that it's
+a stateless session bean.
+
+
+(3) Message-Driven Bean
+
++===============================================================+
+import javax.ejb.MessageDriven;                                 |
+import javax.jms.Message;                                       |
+import javax.jms.MessageListener;                               |
+                                                                |
+@MessageDriven(mappedName = "queue/MyQueue")                    |
+public class MessageReceiver implements MessageListener {       |
+                                                                |
+    public void onMessage(Message message) {                    |
+        // Process incoming message                             |
+        System.out.println("Received message: "                 |
+        				   + message.toString());               |
+    }                                                           |
+}                                                               |
++===============================================================+
